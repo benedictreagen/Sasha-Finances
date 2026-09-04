@@ -1,5 +1,93 @@
 @import "tailwindcss";
 
+:root {
+  --app-bg: #191919;
+  --app-surface: #252525;
+  --app-surface-alt: #202020;
+  --app-text: #EBEBEB;
+  --app-label: #9B9A97;
+  --app-border: #373737;
+  --app-accent: #F59E0B;
+  --app-accent-hover: #D97706;
+}
+
+[data-theme="light"] {
+  --app-bg: #F7F6F3;
+  --app-surface: #FFFFFF;
+  --app-surface-alt: #FBFBFA;
+  --app-text: #37352F;
+  --app-label: #787774;
+  --app-border: #E9E9E7;
+  --app-accent: #F59E0B;
+  --app-accent-hover: #D97706;
+}
+
+[data-theme="dark"] {
+  --app-bg: #191919;
+  --app-surface: #252525;
+  --app-surface-alt: #202020;
+  --app-text: #EBEBEB;
+  --app-label: #9B9A97;
+  --app-border: #373737;
+  --app-accent: #F59E0B;
+  --app-accent-hover: #D97706;
+}
+
+[data-theme="cherry-blossom"] {
+  --app-bg: #FFF5F7;
+  --app-surface: #FFFFFF;
+  --app-surface-alt: #FFF0F4;
+  --app-text: #4C1D2E;
+  --app-label: #9F5D74;
+  --app-border: #FCE7F0;
+  --app-accent: #F43F5E;
+  --app-accent-hover: #E11D48;
+}
+
+[data-theme="spring"] {
+  --app-bg: #F3F9F5;
+  --app-surface: #FFFFFF;
+  --app-surface-alt: #EEF7F1;
+  --app-text: #1E3A2B;
+  --app-label: #587967;
+  --app-border: #E1EFE7;
+  --app-accent: #059669;
+  --app-accent-hover: #047857;
+}
+
+[data-theme="winter"] {
+  --app-bg: #F0F5FA;
+  --app-surface: #FFFFFF;
+  --app-surface-alt: #EAF1F8;
+  --app-text: #1E293B;
+  --app-label: #64748B;
+  --app-border: #E0EBF5;
+  --app-accent: #0284C7;
+  --app-accent-hover: #0369A1;
+}
+
+[data-theme="berry"] {
+  --app-bg: #18101E;
+  --app-surface: #271B30;
+  --app-surface-alt: #201528;
+  --app-text: #F3E8F5;
+  --app-label: #AC8EB5;
+  --app-border: #3D254B;
+  --app-accent: #D946EF;
+  --app-accent-hover: #C026D3;
+}
+
+[data-theme="cloud"] {
+  --app-bg: #F4F5F8;
+  --app-surface: #FFFFFF;
+  --app-surface-alt: #ECEEF3;
+  --app-text: #272B35;
+  --app-label: #737A8C;
+  --app-border: #E3E6EE;
+  --app-accent: #6366F1;
+  --app-accent-hover: #4F46E5;
+}
+
 @layer base {
   body {
     font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;

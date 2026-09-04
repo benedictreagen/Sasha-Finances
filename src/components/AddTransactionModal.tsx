@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Transaction, ListsConfig } from '../types';
+import { Transaction, ListsConfig, ThemeMode } from '../types';
+import { getThemeTokens } from '../theme';
 import { X, Plus, Edit2 } from 'lucide-react';
 
 interface AddTransactionModalProps {
@@ -9,7 +10,7 @@ interface AddTransactionModalProps {
   onEditTransaction?: (tx: Transaction) => void;
   initialTransaction?: Transaction | null;
   listsConfig: ListsConfig;
-  theme?: 'dark' | 'light';
+  theme?: ThemeMode;
 }
 
 export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
@@ -21,7 +22,8 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   listsConfig,
   theme = 'dark',
 }) => {
-  const isDark = theme === 'dark';
+  const tokens = getThemeTokens(theme);
+  const isDark = tokens.isDark;
   const isEditMode = !!initialTransaction;
 
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -109,9 +111,9 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
     onClose();
   };
 
-  const cardBg = isDark ? 'bg-[#252525] border-[#373737] text-[#EBEBEB]' : 'bg-[#FFFFFF] border-[#E9E9E7] text-[#37352F]';
-  const inputBg = isDark ? 'bg-[#191919] border-[#373737] text-[#EBEBEB]' : 'bg-[#FBFBFA] border-[#E9E9E7] text-[#37352F]';
-  const labelColor = isDark ? 'text-[#9B9A97]' : 'text-[#787774]';
+  const cardBg = tokens.cardBg;
+  const inputBg = tokens.inputBg;
+  const labelColor = tokens.labelColor;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">

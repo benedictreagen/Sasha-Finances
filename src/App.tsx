@@ -50,6 +50,13 @@ import { SettingsView } from './components/SettingsView';
 import { AuthGate } from './components/AuthGate';
 import { AddTransactionModal } from './components/AddTransactionModal';
 import { 
+  getStoredTheme, 
+  setStoredTheme, 
+  applyGlobalTheme, 
+  getThemeTokens, 
+  THEMES 
+} from './theme';
+import { 
   LayoutDashboard, 
   ArrowLeftRight, 
   Wallet, 
@@ -63,7 +70,8 @@ import {
   CheckCircle2, 
   Plus, 
   FileSpreadsheet,
-  AlertTriangle
+  AlertTriangle,
+  Palette
 } from 'lucide-react';
 
 type TabType = 'Dashboard' | 'Transactions' | 'Accounts' | 'Goals' | 'Settings';
@@ -123,14 +131,7 @@ export default function App() {
   }, []);
 
   // Theme state
-  const [theme, setTheme] = useState<ThemeMode>(() => {
-    try {
-      const saved = localStorage.getItem('sashas_theme');
-      return (saved === 'light' || saved === 'dark') ? saved : 'dark';
-    } catch {
-      return 'dark';
-    }
-  });
+  const [theme, setTheme] = useState<ThemeMode>(() => getStoredTheme());
 
   // Authentication State for app lock
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
@@ -390,21 +391,19 @@ export default function App() {
   }, [emergencyFund]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem('sashas_theme', theme);
-    } catch (e) {
-      console.warn('Could not save theme to localStorage', e);
-    }
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+    setStoredTheme(theme);
+    applyGlobalTheme(theme);
   }, [theme]);
 
   const toggleTheme = (newTheme?: ThemeMode) => {
-    const target = newTheme || (theme === 'dark' ? 'light' : 'dark');
-    setTheme(target);
+    if (newTheme) {
+      setTheme(newTheme);
+      return;
+    }
+    const themeCycle: ThemeMode[] = ['light', 'dark', 'cherry-blossom', 'spring', 'winter', 'berry', 'cloud'];
+    const currentIndex = themeCycle.indexOf(theme);
+    const nextTheme = themeCycle[(currentIndex + 1) % themeCycle.length];
+    setTheme(nextTheme);
   };
 
   // Connect / Sign In with Google Sheets
@@ -755,10 +754,11 @@ export default function App() {
   };
 
   // Theme token classes
-  const isDark = theme === 'dark';
-  const appBg = isDark ? 'bg-[#191919] text-[#EBEBEB]' : 'bg-[#F7F6F3] text-[#37352F]';
-  const navBg = isDark ? 'bg-[#202020] border-[#373737]' : 'bg-[#FFFFFF] border-[#E9E9E7]';
-  const labelColor = isDark ? 'text-[#9B9A97]' : 'text-[#787774]';
+  const tokens = getThemeTokens(theme);
+  const isDark = tokens.isDark;
+  const appBg = tokens.appBg;
+  const navBg = tokens.navBg;
+  const labelColor = tokens.labelColor;
 
   return (
     <div className={`min-h-screen flex flex-col font-sans transition-colors duration-200 ${appBg}`}>
@@ -866,17 +866,16 @@ export default function App() {
                 <Download className="w-4 h-4 text-amber-500" />
               </button>
 
-              {/* Theme Toggle Button */}
+              {/* Theme Cycle Button */}
               <button
                 onClick={() => toggleTheme()}
-                title={`Switch to ${isDark ? 'Light' : 'Dark'} mode`}
-                className={`p-2 rounded-lg border text-xs cursor-pointer transition-colors ${navBg} hover:bg-black/5 dark:hover:bg-white/5`}
+                title={`Current Theme: ${THEMES.find((t) => t.id === theme)?.name || theme}. Click to cycle themes.`}
+                className={`p-2 rounded-lg border text-xs cursor-pointer transition-colors flex items-center space-x-1.5 ${navBg} hover:bg-black/5 dark:hover:bg-white/5`}
               >
-                {isDark ? (
-                  <Sun className="w-4 h-4 text-amber-400" />
-                ) : (
-                  <Moon className="w-4 h-4 text-slate-700" />
-                )}
+                <Palette className={`w-4 h-4 ${tokens.accentText}`} />
+                <span className="text-[11px] font-semibold hidden xl:inline">
+                  {THEMES.find((t) => t.id === theme)?.name}
+                </span>
               </button>
 
               {/* Security Lock Toggle */}

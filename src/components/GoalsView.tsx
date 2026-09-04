@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { SavingsGoal, EmergencyFundData } from '../types';
+import { SavingsGoal, EmergencyFundData, ThemeMode } from '../types';
 import { formatIDR, formatPercent } from '../excelGenerator';
+import { getThemeTokens } from '../theme';
 import { 
   Target, 
   ShieldAlert, 
@@ -17,7 +18,7 @@ interface GoalsViewProps {
   onUpdateGoals: (goals: SavingsGoal[]) => void;
   emergencyFund: EmergencyFundData;
   onUpdateEmergencyFund: (ef: EmergencyFundData) => void;
-  theme?: 'dark' | 'light';
+  theme?: ThemeMode;
 }
 
 export const GoalsView: React.FC<GoalsViewProps> = ({
@@ -27,7 +28,8 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
   onUpdateEmergencyFund,
   theme = 'dark',
 }) => {
-  const isDark = theme === 'dark';
+  const tokens = getThemeTokens(theme);
+  const isDark = tokens.isDark;
 
   const [isAddGoalModalOpen, setIsAddGoalModalOpen] = useState(false);
   const [newGoalName, setNewGoalName] = useState('');
@@ -44,10 +46,10 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
   const [efMonths, setEfMonths] = useState(emergencyFund.idealMonths);
   const [efExpense, setEfExpense] = useState(emergencyFund.monthlyEssentialExpense.toString());
 
-  const cardBg = isDark ? 'bg-[#252525] border-[#373737] text-[#EBEBEB]' : 'bg-[#FFFFFF] border-[#E9E9E7] text-[#37352F]';
-  const cardAlt = isDark ? 'bg-[#202020] border-[#373737]' : 'bg-[#FBFBFA] border-[#E9E9E7]';
-  const labelColor = isDark ? 'text-[#9B9A97]' : 'text-[#787774]';
-  const inputBg = isDark ? 'bg-[#191919] border-[#373737] text-[#EBEBEB]' : 'bg-[#FBFBFA] border-[#E9E9E7] text-[#37352F]';
+  const cardBg = tokens.cardBg;
+  const cardAlt = tokens.cardAlt;
+  const labelColor = tokens.labelColor;
+  const inputBg = tokens.inputBg;
 
   // Overall calculations
   const totalTarget = goals.reduce((sum, g) => sum + g.targetBalance, 0);

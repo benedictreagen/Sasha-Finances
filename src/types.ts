@@ -95,7 +95,14 @@ export interface RecurringTransaction {
   notes?: string;
 }
 
-export type ThemeMode = 'dark' | 'light';
+export type ThemeMode = 
+  | 'light' 
+  | 'dark' 
+  | 'cherry-blossom' 
+  | 'spring' 
+  | 'winter' 
+  | 'berry' 
+  | 'cloud';
 
 export interface AccountInfo {
   name: AccountName;

@@ -4,9 +4,11 @@ import {
   Transaction, 
   AccountInfo, 
   SavingsGoal, 
-  EmergencyFundData 
+  EmergencyFundData,
+  ThemeMode
 } from '../types';
 import { formatIDR, formatPercent } from '../excelGenerator';
+import { getThemeTokens } from '../theme';
 import { 
   Wallet, 
   TrendingUp, 
@@ -33,7 +35,7 @@ interface DashboardViewProps {
   filter: FilterState;
   setFilter: React.Dispatch<React.SetStateAction<FilterState>>;
   onAddTransactionClick: () => void;
-  theme?: 'dark' | 'light';
+  theme?: ThemeMode;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
@@ -47,13 +49,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onAddTransactionClick,
   theme = 'dark',
 }) => {
-  const isDark = theme === 'dark';
-
-  const cardBg = isDark ? 'bg-[#252525] border-[#373737] text-[#EBEBEB]' : 'bg-[#FFFFFF] border-[#E9E9E7] text-[#37352F]';
-  const cardAlt = isDark ? 'bg-[#202020] border-[#373737]' : 'bg-[#FBFBFA] border-[#E9E9E7]';
-  const labelColor = isDark ? 'text-[#9B9A97]' : 'text-[#787774]';
-  const inputBg = isDark ? 'bg-[#191919] border-[#373737] text-[#EBEBEB]' : 'bg-[#FBFBFA] border-[#E9E9E7] text-[#37352F]';
-  const barBg = isDark ? 'bg-white/10' : 'bg-black/10';
+  const tokens = getThemeTokens(theme);
+  const isDark = tokens.isDark;
+  const cardBg = tokens.cardBg;
+  const cardAlt = tokens.cardAlt;
+  const labelColor = tokens.labelColor;
+  const inputBg = tokens.inputBg;
+  const barBg = tokens.barBg;
 
   // Apply filters to transactions
   const filteredTx = transactions.filter((tx) => {

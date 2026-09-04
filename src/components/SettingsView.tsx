@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { User } from 'firebase/auth';
 import { ListsConfig, ThemeMode, AccountInfo, GoogleConnectionState } from '../types';
 import { formatIDR } from '../excelGenerator';
+import { ThemeSelector } from './ThemeSelector';
+import { getThemeTokens } from '../theme';
 import { 
   Sun, 
   Moon, 
@@ -94,10 +96,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [linkLoading, setLinkLoading] = useState(false);
 
-  const cardBg = isDark ? 'bg-[#252525] border-[#373737] text-[#EBEBEB]' : 'bg-[#FFFFFF] border-[#E9E9E7] text-[#37352F]';
-  const cardAlt = isDark ? 'bg-[#202020] border-[#373737]' : 'bg-[#FBFBFA] border-[#E9E9E7]';
-  const labelColor = isDark ? 'text-[#9B9A97]' : 'text-[#787774]';
-  const inputBg = isDark ? 'bg-[#191919] border-[#373737] text-[#EBEBEB]' : 'bg-[#FBFBFA] border-[#E9E9E7] text-[#37352F]';
+  const tokens = getThemeTokens(theme);
+  const cardBg = tokens.cardBg;
+  const cardAlt = tokens.cardAlt;
+  const labelColor = tokens.labelColor;
+  const inputBg = tokens.inputBg;
 
   const handleAddCategory = (e: React.FormEvent) => {
     e.preventDefault();
@@ -687,65 +690,18 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
       {/* Tab 1: Appearance / Theme */}
       {activeTab === 'appearance' && (
-        <div className="space-y-6 max-w-2xl">
+        <div className="space-y-6 max-w-4xl">
           <div className={`p-6 rounded-2xl border shadow-xs ${cardBg}`}>
-            <h3 className="text-base font-semibold font-heading mb-1">Theme Mode</h3>
-            <p className={`text-xs mb-5 ${labelColor}`}>
-              Choose between Notion-inspired Light Mode and editorial Dark Mode.
-            </p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Light Mode Card */}
-              <div
-                onClick={() => onToggleTheme('light')}
-                className={`p-4 rounded-xl border cursor-pointer transition-all ${
-                  theme === 'light'
-                    ? 'border-amber-500 ring-2 ring-amber-500/20 bg-white text-[#37352F]'
-                    : 'border-[#E9E9E7] bg-[#F7F6F3] text-[#787774] opacity-75 hover:opacity-100'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center space-x-2">
-                    <Sun className="w-4 h-4 text-amber-500" />
-                    <span className="font-semibold text-sm">Light Mode</span>
-                  </div>
-                  {theme === 'light' && <Check className="w-4 h-4 text-amber-500" />}
-                </div>
-                <p className="text-xs text-[#787774]">
-                  Warm off-white (#F7F6F3) background, crisp white cards, dark charcoal text, and subtle dividers.
-                </p>
-              </div>
-
-              {/* Dark Mode Card */}
-              <div
-                onClick={() => onToggleTheme('dark')}
-                className={`p-4 rounded-xl border cursor-pointer transition-all ${
-                  theme === 'dark'
-                    ? 'border-amber-500 ring-2 ring-amber-500/20 bg-[#252525] text-[#EBEBEB]'
-                    : 'border-[#373737] bg-[#191919] text-[#9B9A97] opacity-75 hover:opacity-100'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center space-x-2">
-                    <Moon className="w-4 h-4 text-amber-500" />
-                    <span className="font-semibold text-sm">Dark Mode</span>
-                  </div>
-                  {theme === 'dark' && <Check className="w-4 h-4 text-amber-500" />}
-                </div>
-                <p className="text-xs text-[#9B9A97]">
-                  Dark charcoal (#191919) background, refined charcoal cards, off-white text, and calm minimal contrast.
-                </p>
-              </div>
-            </div>
+            <ThemeSelector currentTheme={theme} onSelectTheme={onToggleTheme} />
           </div>
 
           <div className={`p-5 rounded-2xl border ${cardBg}`}>
             <h4 className="text-sm font-semibold font-heading mb-1 flex items-center space-x-2">
               <Sparkles className="w-4 h-4 text-amber-500" />
-              <span>Typography Pairing</span>
+              <span>Typography Pairing & Design Craft</span>
             </h4>
             <p className={`text-xs ${labelColor}`}>
-              The interface utilizes <strong>Inter</strong> for clean, high-legibility body numbers and labels, paired with <strong>Poppins</strong> for headings, creating an editorial Notion workspace feel.
+              The interface pairs <strong>Inter</strong> for high-legibility financial amounts and tabular data with <strong>Poppins</strong> for display headings. Global color tokens persist immediately to your local storage and adapt every view dynamically.
             </p>
           </div>
         </div>

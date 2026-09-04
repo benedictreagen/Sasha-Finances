@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Lock, KeyRound, ShieldAlert, User, Eye, EyeOff } from 'lucide-react';
+import { ThemeMode } from '../types';
+import { getThemeTokens } from '../theme';
 
 interface AuthGateProps {
   onLogin: () => void;
-  theme?: 'dark' | 'light';
+  theme?: ThemeMode;
 }
 
 export const AuthGate: React.FC<AuthGateProps> = ({ onLogin, theme = 'dark' }) => {
@@ -13,10 +15,11 @@ export const AuthGate: React.FC<AuthGateProps> = ({ onLogin, theme = 'dark' }) =
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const isDark = theme === 'dark';
-  const cardBg = isDark ? 'bg-[#252525] border-[#373737] text-[#EBEBEB]' : 'bg-[#FFFFFF] border-[#E9E9E7] text-[#37352F]';
-  const labelColor = isDark ? 'text-[#9B9A97]' : 'text-[#787774]';
-  const inputBg = isDark ? 'bg-[#191919] border-[#373737] text-[#EBEBEB]' : 'bg-[#FBFBFA] border-[#E9E9E7] text-[#37352F]';
+  const tokens = getThemeTokens(theme);
+  const isDark = tokens.isDark;
+  const cardBg = tokens.cardBg;
+  const labelColor = tokens.labelColor;
+  const inputBg = tokens.inputBg;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

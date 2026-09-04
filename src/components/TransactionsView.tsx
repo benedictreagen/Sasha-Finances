@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Transaction, ListsConfig, GoogleConnectionState } from '../types';
+import { Transaction, ListsConfig, GoogleConnectionState, ThemeMode } from '../types';
 import { formatIDR } from '../excelGenerator';
+import { getThemeTokens } from '../theme';
 import { 
   Plus, 
   Trash2, 
@@ -25,7 +26,7 @@ interface TransactionsViewProps {
   onDeleteTransaction: (id: string) => void;
   listsConfig: ListsConfig;
   onExportExcel: () => void;
-  theme?: 'dark' | 'light';
+  theme?: ThemeMode;
   connectionState?: GoogleConnectionState;
   spreadsheetTitle?: string;
   isSyncing?: boolean;
@@ -49,7 +50,8 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
   onConnectGoogleSheets,
   spreadsheetUrl,
 }) => {
-  const isDark = theme === 'dark';
+  const tokens = getThemeTokens(theme);
+  const isDark = tokens.isDark;
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
@@ -63,12 +65,12 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
   const [filterMonth, setFilterMonth] = useState<string>('All');
   const [sortBy, setSortBy] = useState<'date-desc' | 'date-asc' | 'amount-desc' | 'amount-asc'>('date-desc');
 
-  const cardBg = isDark ? 'bg-[#252525] border-[#373737] text-[#EBEBEB]' : 'bg-[#FFFFFF] border-[#E9E9E7] text-[#37352F]';
-  const cardAlt = isDark ? 'bg-[#202020] border-[#373737]' : 'bg-[#FBFBFA] border-[#E9E9E7]';
-  const labelColor = isDark ? 'text-[#9B9A97]' : 'text-[#787774]';
-  const inputBg = isDark ? 'bg-[#191919] border-[#373737] text-[#EBEBEB]' : 'bg-[#FBFBFA] border-[#E9E9E7] text-[#37352F]';
-  const tableHeaderBg = isDark ? 'bg-[#1F1F1F] text-[#9B9A97]' : 'bg-[#F7F6F3] text-[#787774]';
-  const rowHoverBg = isDark ? 'hover:bg-[#2A2A2A]' : 'hover:bg-[#F9F9F8]';
+  const cardBg = tokens.cardBg;
+  const cardAlt = tokens.cardAlt;
+  const labelColor = tokens.labelColor;
+  const inputBg = tokens.inputBg;
+  const tableHeaderBg = tokens.tableHeaderBg;
+  const rowHoverBg = tokens.rowHoverBg;
 
   // Filter logic
   const filtered = transactions.filter((tx) => {

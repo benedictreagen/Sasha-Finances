@@ -9,14 +9,15 @@ import {
   HelpCircle,
   ArrowRight
 } from 'lucide-react';
-import { Transaction, TransactionType, Category, AccountName, PaymentMethod, Purpose } from '../types';
+import { Transaction, TransactionType, Category, AccountName, PaymentMethod, Purpose, ThemeMode } from '../types';
 import { formatIDR } from '../excelGenerator';
+import { getThemeTokens } from '../theme';
 
 interface CsvImportModalProps {
   isOpen: boolean;
   onClose: () => void;
   onImport: (transactions: Omit<Transaction, 'id' | 'income' | 'expense'>[]) => void;
-  theme?: 'dark' | 'light';
+  theme?: ThemeMode;
 }
 
 interface ParsedRow {
@@ -49,7 +50,8 @@ export const CsvImportModal: React.FC<CsvImportModalProps> = ({
 
   if (!isOpen) return null;
 
-  const isDark = theme === 'dark';
+  const tokens = getThemeTokens(theme);
+  const isDark = tokens.isDark;
 
   // Template CSV generator
   const handleDownloadTemplate = () => {

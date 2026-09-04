@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { AccountInfo, Transaction, ListsConfig } from '../types';
+import { AccountInfo, Transaction, ListsConfig, ThemeMode } from '../types';
 import { formatIDR } from '../excelGenerator';
+import { getThemeTokens } from '../theme';
 import { 
   Wallet, 
   Landmark, 
@@ -15,7 +16,7 @@ interface AccountsViewProps {
   transactions: Transaction[];
   listsConfig: ListsConfig;
   onAddTransaction: (tx: Omit<Transaction, 'id' | 'income' | 'expense'>) => void;
-  theme?: 'dark' | 'light';
+  theme?: ThemeMode;
 }
 
 export const AccountsView: React.FC<AccountsViewProps> = ({
@@ -25,7 +26,8 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
   onAddTransaction,
   theme = 'dark',
 }) => {
-  const isDark = theme === 'dark';
+  const tokens = getThemeTokens(theme);
+  const isDark = tokens.isDark;
 
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
   const [fromAccount, setFromAccount] = useState(accounts[0]?.name || 'Blu');
@@ -99,10 +101,10 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
     setIsTransferModalOpen(false);
   };
 
-  const cardBg = isDark ? 'bg-[#252525] border-[#373737] text-[#EBEBEB]' : 'bg-[#FFFFFF] border-[#E9E9E7] text-[#37352F]';
-  const cardAlt = isDark ? 'bg-[#202020] border-[#373737]' : 'bg-[#FBFBFA] border-[#E9E9E7]';
-  const labelColor = isDark ? 'text-[#9B9A97]' : 'text-[#787774]';
-  const inputBg = isDark ? 'bg-[#191919] border-[#373737] text-[#EBEBEB]' : 'bg-[#FBFBFA] border-[#E9E9E7] text-[#37352F]';
+  const cardBg = tokens.cardBg;
+  const cardAlt = tokens.cardAlt;
+  const labelColor = tokens.labelColor;
+  const inputBg = tokens.inputBg;
 
   const getAccountIcon = (type: string) => {
     switch (type) {
