@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sasha’s Finance Dashboard</title>
+    <meta http-equiv="refresh" content="0; url=/Sasha-Finances/" />
+    <script>
+      (function () {
+        var base = '/Sasha-Finances/';
+        var path = window.location.pathname;
+        var sub = path.replace(/^\/Sasha-Finances\/?/, '');
+        var search = window.location.search || '';
+        var hash = window.location.hash || '';
+
+        // If a subpath was visited directly (e.g. /Sasha-Finances/transactions), map to hash route
+        if (sub && sub !== 'index.html' && sub !== '404.html') {
+          window.location.replace(base + '#/' + sub.replace(/^\//, '') + search + hash);
+        } else {
+          window.location.replace(base + search + hash);
+        }
+      })();
+    </script>
+  </head>
+  <body style="margin:0; background-color:#191919; color:#ebebeb; font-family:sans-serif; display:flex; align-items:center; justify-content:center; min-height:100vh;">
+    <p style="font-size:14px; color:#9b9a97;">Loading Sasha’s Finance Dashboard...</p>
+  </body>
+</html>

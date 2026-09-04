@@ -1,0 +1,6 @@
+{
+  "name": "Sasha’s Finance Dashboard",
+  "description": "Personal finance tracking system with dynamic dashboard, transactions, budget tracking, accounts, savings goals, and Google Sheets integration.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
