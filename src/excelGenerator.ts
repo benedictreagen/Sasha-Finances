@@ -1,5 +1,5 @@
 import ExcelJS from 'exceljs';
-import { Transaction, AccountInfo, SavingsGoal, EmergencyFundData, ListsConfig } from './types';
+import { Transaction, AccountInfo, SavingsGoal, EmergencyFundData, ListsConfig, Deposit } from './types';
 import { DEFAULT_LISTS_CONFIG } from './data';
 
 // Format helpers
@@ -17,7 +17,8 @@ export async function generateSashasWorkbook(
   budgets: Record<string, number>,
   goals: SavingsGoal[],
   emergencyFund: EmergencyFundData,
-  listsConfig: ListsConfig = DEFAULT_LISTS_CONFIG
+  listsConfig: ListsConfig = DEFAULT_LISTS_CONFIG,
+  deposits: Deposit[] = []
 ): Promise<Blob> {
   const workbook = new ExcelJS.Workbook();
   workbook.creator = "Sasha's Finance System";
@@ -632,6 +633,59 @@ export async function generateSashasWorkbook(
     row.getCell(5).numFmt = idrFormat;
   });
   wsWeek.columns = [{ width: 10 }, { width: 24 }, { width: 18 }, { width: 18 }, { width: 18 }];
+
+  // ----------------------------------------------------
+  // 9. DEPOSITS SHEET (Tab 9)
+  // ----------------------------------------------------
+  const wsDep = workbook.addWorksheet('Deposits');
+  wsDep.views = [{ showGridLines: true }];
+
+  wsDep.mergeCells('A1:I1');
+  wsDep.getCell('A1').value = 'DEPOSITS PORTFOLIO (MULTI-PLATFORM)';
+  wsDep.getCell('A1').font = fontTitle;
+
+  wsDep.getRow(2).values = [
+    'Platform',
+    'Deposit Name',
+    'Principal',
+    'Interest Rate',
+    'Start Date',
+    'Maturity Date',
+    'Estimated Interest',
+    'Status',
+    'Notes',
+  ];
+  wsDep.getRow(2).font = fontHeader;
+  wsDep.getRow(2).fill = fillNavy;
+
+  deposits.forEach((dep) => {
+    const row = wsDep.addRow([
+      dep.platform,
+      dep.name,
+      dep.principal,
+      (dep.interestRate / 100),
+      dep.startDate,
+      dep.maturityDate,
+      dep.estimatedInterest,
+      dep.status,
+      dep.notes || '',
+    ]);
+    row.font = fontData;
+    row.getCell(3).numFmt = idrFormat;
+    row.getCell(4).numFmt = pctFormat;
+    row.getCell(7).numFmt = idrFormat;
+  });
+  wsDep.columns = [
+    { width: 16 },
+    { width: 26 },
+    { width: 18 },
+    { width: 14 },
+    { width: 14 },
+    { width: 14 },
+    { width: 18 },
+    { width: 14 },
+    { width: 30 },
+  ];
 
   // Output Excel file
   const buffer = await workbook.xlsx.writeBuffer();

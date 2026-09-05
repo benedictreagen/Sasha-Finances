@@ -5,7 +5,8 @@ import {
   INITIAL_BUDGETS, 
   INITIAL_GOALS, 
   INITIAL_EMERGENCY_FUND,
-  DEFAULT_LISTS_CONFIG
+  DEFAULT_LISTS_CONFIG,
+  INITIAL_DEPOSITS
 } from './data';
 import { 
   Transaction, 
@@ -15,7 +16,8 @@ import {
   FilterState,
   ListsConfig,
   ThemeMode,
-  GoogleConnectionState
+  GoogleConnectionState,
+  Deposit
 } from './types';
 import { 
   generateSashasWorkbook, 
@@ -40,15 +42,20 @@ import {
   extractSpreadsheetId, 
   GoogleSyncError,
   SPREADSHEET_ID_STORAGE_KEY, 
-  LAST_SYNCED_STORAGE_KEY 
+  LAST_SYNCED_STORAGE_KEY,
+  fetchDepositsFromGoogleSheet,
+  writeDepositsToGoogleSheet
 } from './googleSheetsService';
 import { DashboardView } from './components/DashboardView';
 import { TransactionsView } from './components/TransactionsView';
 import { AccountsView } from './components/AccountsView';
+import { DepositsView } from './components/DepositsView';
 import { GoalsView } from './components/GoalsView';
 import { SettingsView } from './components/SettingsView';
 import { AuthGate } from './components/AuthGate';
 import { AddTransactionModal } from './components/AddTransactionModal';
+import { Language, t } from './i18n';
+import { BannerConfig, loadBannerConfig, saveBannerConfig } from './banner';
 import { 
   getStoredTheme, 
   setStoredTheme, 
@@ -71,10 +78,12 @@ import {
   Plus, 
   FileSpreadsheet,
   AlertTriangle,
-  Palette
+  Palette,
+  Globe,
+  Landmark
 } from 'lucide-react';
 
-type TabType = 'Dashboard' | 'Transactions' | 'Accounts' | 'Goals' | 'Settings';
+type TabType = 'Dashboard' | 'Transactions' | 'Accounts' | 'Deposits' | 'Goals' | 'Settings';
 
 function getTabFromUrl(): TabType {
   try {
@@ -82,6 +91,7 @@ function getTabFromUrl(): TabType {
     const hash = window.location.hash.toLowerCase().trim();
     if (hash.includes('transaction')) return 'Transactions';
     if (hash.includes('account')) return 'Accounts';
+    if (hash.includes('deposit')) return 'Deposits';
     if (hash.includes('goal')) return 'Goals';
     if (hash.includes('setting')) return 'Settings';
     if (hash.includes('dashboard')) return 'Dashboard';
@@ -89,6 +99,7 @@ function getTabFromUrl(): TabType {
     const path = window.location.pathname.toLowerCase();
     if (path.includes('/transactions')) return 'Transactions';
     if (path.includes('/accounts')) return 'Accounts';
+    if (path.includes('/deposits')) return 'Deposits';
     if (path.includes('/goals')) return 'Goals';
     if (path.includes('/settings')) return 'Settings';
     if (path.includes('/dashboard')) return 'Dashboard';
@@ -208,6 +219,16 @@ export default function App() {
     }
   });
 
+  // Dedicated Deposits State
+  const [deposits, setDeposits] = useState<Deposit[]>(() => {
+    try {
+      const saved = localStorage.getItem('sashas_deposits');
+      return saved ? JSON.parse(saved) : INITIAL_DEPOSITS;
+    } catch {
+      return INITIAL_DEPOSITS;
+    }
+  });
+
   // Google Sheets Cloud Sync State
   const [googleUser, setGoogleUser] = useState<User | null>(null);
   const [googleToken, setGoogleToken] = useState<string | null>(null);
@@ -247,6 +268,34 @@ export default function App() {
     category: 'All',
     event: 'All',
   });
+
+  // Language State (Bahasa Indonesia & English)
+  const [lang, setLang] = useState<Language>(() => {
+    try {
+      const saved = localStorage.getItem('sashas_language');
+      if (saved === 'en' || saved === 'id') return saved;
+    } catch {}
+    return 'id'; // default Bahasa Indonesia
+  });
+
+  const handleSelectLanguage = (newLang: Language) => {
+    setLang(newLang);
+    try {
+      localStorage.setItem('sashas_language', newLang);
+    } catch {}
+    showToast(newLang === 'id' ? 'Bahasa diubah ke Bahasa Indonesia.' : 'Language switched to English.');
+  };
+
+  // Notion-style Dashboard Cover Banner State
+  const [bannerConfig, setBannerConfig] = useState<BannerConfig>(() => loadBannerConfig());
+
+  const handleChangeBannerConfig = (newConfig: BannerConfig) => {
+    setBannerConfig(newConfig);
+    saveBannerConfig(newConfig);
+  };
+
+  // Settings initial tab tracker
+  const [settingsInitialTab, setSettingsInitialTab] = useState<'appearance' | 'banner' | 'language' | 'categories' | 'accounts' | 'lists' | 'sync'>('sync');
 
   // Quick Add Modal State
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -307,6 +356,12 @@ export default function App() {
       const fetched = await fetchTransactionsFromGoogleSheet(token, sheetId);
       if (fetched.length > 0) {
         setTransactions(fetched);
+      }
+
+      // Pull latest deposits
+      const fetchedDeposits = await fetchDepositsFromGoogleSheet(token, sheetId);
+      if (fetchedDeposits.length > 0) {
+        setDeposits(fetchedDeposits);
       }
       updateLastSyncedTime();
     } catch (err: any) {
@@ -391,6 +446,14 @@ export default function App() {
   }, [emergencyFund]);
 
   useEffect(() => {
+    try {
+      localStorage.setItem('sashas_deposits', JSON.stringify(deposits));
+    } catch (e) {
+      console.warn('Could not save deposits to localStorage', e);
+    }
+  }, [deposits]);
+
+  useEffect(() => {
     setStoredTheme(theme);
     applyGlobalTheme(theme);
   }, [theme]);
@@ -464,8 +527,8 @@ export default function App() {
       setSpreadsheetTitle('Sasha Finance');
       localStorage.setItem(SPREADSHEET_ID_STORAGE_KEY, newId);
 
-      // Write initial datasets and formulas to the 8 sheets
-      showToast('Initializing 8 financial tabs, formulas, and dropdowns...');
+      // Write initial datasets and formulas to the 9 sheets
+      showToast('Initializing financial tabs, formulas, and dropdowns...');
       await writeAllDataToGoogleSheet(
         token,
         newId,
@@ -474,7 +537,8 @@ export default function App() {
         budgets,
         goals,
         emergencyFund,
-        listsConfig
+        listsConfig,
+        deposits
       );
 
       setConnectionState('connected');
@@ -509,6 +573,11 @@ export default function App() {
         showToast(`Retrieved ${fetched.length} transactions from Google Sheets!`);
       } else {
         showToast('Google Sheets accessed: 0 transactions found.');
+      }
+
+      const fetchedDeposits = await fetchDepositsFromGoogleSheet(token, sheetId);
+      if (fetchedDeposits.length > 0) {
+        setDeposits(fetchedDeposits);
       }
       setConnectionState('connected');
       updateLastSyncedTime();
@@ -599,7 +668,7 @@ export default function App() {
     }
   };
 
-  // Push all 8 sheets to Google Sheets
+  // Push all sheets to Google Sheets
   const handlePushAllToGoogleSheets = async () => {
     if (!googleToken || !spreadsheetId) {
       await handleConnectGoogleSheets();
@@ -617,10 +686,11 @@ export default function App() {
         budgets,
         goals,
         emergencyFund,
-        listsConfig
+        listsConfig,
+        deposits
       );
       updateLastSyncedTime();
-      showToast('All 8 sheets synchronized with Google Sheets!');
+      showToast('All sheets including Deposits synchronized with Google Sheets!');
     } catch (err: any) {
       console.error('Push all error:', err);
       const msg = err.message || 'Failed to update Google Sheets';
@@ -731,7 +801,8 @@ export default function App() {
         budgets,
         goals,
         emergencyFund,
-        listsConfig
+        listsConfig,
+        deposits
       );
       downloadBlob(buffer, `Sashas_Finance_Dashboard_${new Date().toISOString().split('T')[0]}.xlsx`);
       showToast('Downloaded offline Excel backup (.xlsx).');
@@ -743,13 +814,84 @@ export default function App() {
 
   // Reset demo data
   const handleResetData = () => {
-    if (window.confirm('Reset all transactions and goals to default template numbers?')) {
+    if (window.confirm('Reset all transactions, deposits, and goals to default template numbers?')) {
       setTransactions(SAMPLE_TRANSACTIONS);
       setListsConfig(DEFAULT_LISTS_CONFIG);
       setBudgets(INITIAL_BUDGETS);
       setGoals(INITIAL_GOALS);
       setEmergencyFund(INITIAL_EMERGENCY_FUND);
+      setDeposits(INITIAL_DEPOSITS);
       showToast('Dashboard reset to default template state.');
+    }
+  };
+
+  // Deposits CRUD Operations
+  const handleAddDeposit = (newDepData: Omit<Deposit, 'id'>) => {
+    const newDep: Deposit = {
+      ...newDepData,
+      id: `dep-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+    };
+    const updated = [newDep, ...deposits];
+    setDeposits(updated);
+
+    if (googleToken && spreadsheetId && connectionState === 'connected') {
+      writeDepositsToGoogleSheet(googleToken, spreadsheetId, updated)
+        .then(() => {
+          updateLastSyncedTime();
+          showToast(t('depositCreatedToast', lang));
+        })
+        .catch((err) => {
+          console.warn('Sync deposits failed:', err);
+        });
+    } else {
+      showToast(t('depositCreatedToast', lang));
+    }
+  };
+
+  const handleEditDeposit = (updatedDep: Deposit) => {
+    const updated = deposits.map((d) => (d.id === updatedDep.id ? updatedDep : d));
+    setDeposits(updated);
+
+    if (googleToken && spreadsheetId && connectionState === 'connected') {
+      writeDepositsToGoogleSheet(googleToken, spreadsheetId, updated)
+        .then(() => {
+          updateLastSyncedTime();
+          showToast(t('depositUpdatedToast', lang));
+        })
+        .catch((err) => {
+          console.warn('Sync deposits failed:', err);
+        });
+    } else {
+      showToast(t('depositUpdatedToast', lang));
+    }
+  };
+
+  const handleDeleteDeposit = (id: string) => {
+    const updated = deposits.filter((d) => d.id !== id);
+    setDeposits(updated);
+
+    if (googleToken && spreadsheetId && connectionState === 'connected') {
+      writeDepositsToGoogleSheet(googleToken, spreadsheetId, updated)
+        .then(() => {
+          updateLastSyncedTime();
+          showToast(t('depositDeletedToast', lang));
+        })
+        .catch((err) => {
+          console.warn('Sync deposits failed:', err);
+        });
+    } else {
+      showToast(t('depositDeletedToast', lang));
+    }
+  };
+
+  const handleRenamePlatformInDeposits = (oldName: string, newName: string) => {
+    const updated = deposits.map((d) => (d.platform === oldName ? { ...d, platform: newName } : d));
+    setDeposits(updated);
+
+    if (googleToken && spreadsheetId && connectionState === 'connected') {
+      writeDepositsToGoogleSheet(googleToken, spreadsheetId, updated)
+        .then(() => updateLastSyncedTime())
+        .catch((err) => console.warn('Sync renamed platform deposits failed:', err));
     }
   };
 
@@ -781,15 +923,16 @@ export default function App() {
               </div>
             </div>
 
-            {/* Middle Nav Tabs: EXACTLY 5 VIEWS */}
+            {/* Middle Nav Tabs */}
             {isAuthenticated && (
               <nav className="hidden md:flex items-center space-x-1">
                 {[
-                  { id: 'Dashboard', label: 'Dashboard', icon: LayoutDashboard },
-                  { id: 'Transactions', label: 'Transactions', icon: ArrowLeftRight },
-                  { id: 'Accounts', label: 'Accounts', icon: Wallet },
-                  { id: 'Goals', label: 'Goals', icon: Target },
-                  { id: 'Settings', label: 'Settings', icon: Settings },
+                  { id: 'Dashboard', label: t('navDashboard', lang), icon: LayoutDashboard },
+                  { id: 'Transactions', label: t('navTransactions', lang), icon: ArrowLeftRight },
+                  { id: 'Accounts', label: t('navAccounts', lang), icon: Wallet },
+                  { id: 'Deposits', label: t('navDeposits', lang), icon: Landmark },
+                  { id: 'Goals', label: t('navGoals', lang), icon: Target },
+                  { id: 'Settings', label: t('navSettings', lang), icon: Settings },
                 ].map((item) => {
                   const Icon = item.icon;
                   const isActive = activeTab === item.id;
@@ -857,6 +1000,18 @@ export default function App() {
                 </button>
               )}
 
+              {/* Language Switcher Quick Pill */}
+              <button
+                onClick={() => handleSelectLanguage(lang === 'id' ? 'en' : 'id')}
+                title={lang === 'id' ? 'Ganti bahasa ke English' : 'Switch language to Bahasa Indonesia'}
+                className={`p-2 rounded-lg border text-xs cursor-pointer transition-colors flex items-center space-x-1 ${navBg} hover:bg-black/5 dark:hover:bg-white/5 font-semibold`}
+              >
+                <Globe className="w-4 h-4 text-amber-500" />
+                <span className="text-[11px] font-bold text-amber-500">
+                  {lang.toUpperCase()}
+                </span>
+              </button>
+
               {/* Download Excel Backup (.xlsx) */}
               <button
                 onClick={handleExportExcel}
@@ -905,11 +1060,12 @@ export default function App() {
           {isAuthenticated && (
             <div className="flex md:hidden overflow-x-auto py-2 border-t border-inherit space-x-1 scrollbar-none">
               {[
-                { id: 'Dashboard', label: 'Dashboard', icon: LayoutDashboard },
-                { id: 'Transactions', label: 'Transactions', icon: ArrowLeftRight },
-                { id: 'Accounts', label: 'Accounts', icon: Wallet },
-                { id: 'Goals', label: 'Goals', icon: Target },
-                { id: 'Settings', label: 'Settings', icon: Settings },
+                { id: 'Dashboard', label: t('navDashboard', lang), icon: LayoutDashboard },
+                { id: 'Transactions', label: t('navTransactions', lang), icon: ArrowLeftRight },
+                { id: 'Accounts', label: t('navAccounts', lang), icon: Wallet },
+                { id: 'Deposits', label: t('navDeposits', lang), icon: Landmark },
+                { id: 'Goals', label: t('navGoals', lang), icon: Target },
+                { id: 'Settings', label: t('navSettings', lang), icon: Settings },
               ].map((item) => {
                 const Icon = item.icon;
                 const isActive = activeTab === item.id;
@@ -957,6 +1113,14 @@ export default function App() {
                 setFilter={setFilter}
                 onAddTransactionClick={() => setIsAddModalOpen(true)}
                 theme={theme}
+                bannerConfig={bannerConfig}
+                lang={lang}
+                onOpenBannerSettings={() => {
+                  setSettingsInitialTab('banner');
+                  handleSelectTab('Settings');
+                }}
+                deposits={deposits}
+                onNavigateToDeposits={() => handleSelectTab('Deposits')}
               />
             )}
 
@@ -975,6 +1139,7 @@ export default function App() {
                 onRefreshSync={handleRefreshSync}
                 onConnectGoogleSheets={handleConnectGoogleSheets}
                 spreadsheetUrl={spreadsheetUrl}
+                lang={lang}
               />
             )}
 
@@ -985,6 +1150,25 @@ export default function App() {
                 listsConfig={listsConfig}
                 onAddTransaction={handleAddTransaction}
                 theme={theme}
+                lang={lang}
+              />
+            )}
+
+            {activeTab === 'Deposits' && (
+              <DepositsView
+                deposits={deposits}
+                onAddDeposit={handleAddDeposit}
+                onEditDeposit={handleEditDeposit}
+                onDeleteDeposit={handleDeleteDeposit}
+                accounts={liveAccounts}
+                listsConfig={listsConfig}
+                theme={theme}
+                lang={lang}
+                onAddTransaction={handleAddTransaction}
+                onOpenPlatformSettings={() => {
+                  setSettingsInitialTab('platforms');
+                  handleSelectTab('Settings');
+                }}
               />
             )}
 
@@ -995,6 +1179,7 @@ export default function App() {
                 emergencyFund={emergencyFund}
                 onUpdateEmergencyFund={setEmergencyFund}
                 theme={theme}
+                lang={lang}
               />
             )}
 
@@ -1020,6 +1205,13 @@ export default function App() {
                 onDisconnectGoogleSheets={handleDisconnectGoogleSheets}
                 onPushAllToGoogleSheets={handlePushAllToGoogleSheets}
                 onLinkSpreadsheetId={handleLinkSpreadsheetId}
+                lang={lang}
+                onSelectLanguage={handleSelectLanguage}
+                bannerConfig={bannerConfig}
+                onChangeBannerConfig={handleChangeBannerConfig}
+                initialTab={settingsInitialTab}
+                deposits={deposits}
+                onRenamePlatformInDeposits={handleRenamePlatformInDeposits}
               />
             )}
           </>
@@ -1033,6 +1225,7 @@ export default function App() {
         onAddTransaction={handleAddTransaction}
         listsConfig={listsConfig}
         theme={theme}
+        lang={lang}
       />
 
       {/* Floating Notification Toast */}

@@ -54,6 +54,23 @@ export interface ListsConfig {
   paymentMethods: string[];
   purposes: string[];
   events: string[];
+  depositPlatforms?: string[];
+}
+
+export type DepositStatus = 'Active' | 'Matured' | 'Withdrawn' | 'Reinvested';
+
+export interface Deposit {
+  id: string;
+  platform: string;
+  name: string;
+  principal: number;
+  interestRate: number; // Percentage p.a. (e.g., 4.5 for 4.5%)
+  startDate: string; // YYYY-MM-DD
+  maturityDate: string; // YYYY-MM-DD
+  estimatedInterest: number;
+  status: DepositStatus;
+  sourceAccount?: string;
+  notes?: string;
 }
 
 export interface Transaction {

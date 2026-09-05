@@ -5,8 +5,12 @@ import {
   AccountInfo, 
   SavingsGoal, 
   EmergencyFundData,
-  ThemeMode
+  ThemeMode,
+  Deposit
 } from '../types';
+import { BannerConfig } from '../banner';
+import { Language, t, formatControlledValue } from '../i18n';
+import { BannerCover } from './BannerCover';
 import { formatIDR, formatPercent } from '../excelGenerator';
 import { getThemeTokens } from '../theme';
 import { 
@@ -23,7 +27,10 @@ import {
   ArrowDownRight,
   Sparkles,
   Plus,
-  RotateCcw
+  RotateCcw,
+  Landmark,
+  ArrowRight,
+  Coins
 } from 'lucide-react';
 
 interface DashboardViewProps {
@@ -36,6 +43,11 @@ interface DashboardViewProps {
   setFilter: React.Dispatch<React.SetStateAction<FilterState>>;
   onAddTransactionClick: () => void;
   theme?: ThemeMode;
+  bannerConfig: BannerConfig;
+  lang: Language;
+  onOpenBannerSettings?: () => void;
+  deposits?: Deposit[];
+  onNavigateToDeposits?: () => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
@@ -48,6 +60,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   setFilter,
   onAddTransactionClick,
   theme = 'dark',
+  bannerConfig,
+  lang,
+  onOpenBannerSettings,
+  deposits = [],
+  onNavigateToDeposits,
 }) => {
   const tokens = getThemeTokens(theme);
   const isDark = tokens.isDark;
@@ -56,6 +73,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const labelColor = tokens.labelColor;
   const inputBg = tokens.inputBg;
   const barBg = tokens.barBg;
+
+  // Calculate Deposits & Total Assets
+  const activeDeposits = deposits.filter((d) => d.status === 'Active');
+  const totalDeposits = activeDeposits.reduce((sum, d) => sum + d.principal, 0);
+  const totalEstimatedInterest = activeDeposits.reduce((sum, d) => sum + (d.estimatedInterest || 0), 0);
+  const activePlatformsCount = new Set(activeDeposits.map((d) => d.platform)).size;
 
   // Apply filters to transactions
   const filteredTx = transactions.filter((tx) => {
@@ -146,32 +169,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* Top Banner with Quick Action */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold font-heading">Sasha’s Finance Dashboard</h1>
-          <p className={`text-xs mt-1 ${labelColor}`}>
-            Personal finance overview synchronized with the persistent spreadsheet backend.
-          </p>
-        </div>
-        <button
-          onClick={onAddTransactionClick}
-          className="inline-flex items-center space-x-1.5 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-black text-xs font-semibold cursor-pointer transition-colors shadow-xs"
-        >
-          <Plus className="w-4 h-4" />
-          <span>+ Add Transaction</span>
-        </button>
-      </div>
+      {/* Top Banner Cover Component */}
+      <BannerCover
+        config={bannerConfig}
+        lang={lang}
+        onAddTransactionClick={onAddTransactionClick}
+        onOpenBannerSettings={onOpenBannerSettings}
+        labelColor={labelColor}
+        theme={theme}
+      />
 
       {/* Interactive Filter Presets Toolbar */}
       <div id="dashboard-filters" className={`p-4 rounded-2xl border shadow-xs ${cardBg}`}>
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center space-x-2">
             <span className={`text-[10px] font-semibold tracking-wider uppercase ${labelColor}`}>
-              Interactive Filters
+              {t('interactiveFilters', lang)}
             </span>
             <span className="text-[11px] text-amber-500 font-medium px-2 py-0.5 rounded-md bg-amber-500/10">
-              Live Reconciled
+              {t('liveReconciled', lang)}
             </span>
           </div>
           <button
@@ -187,13 +203,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             className={`text-xs hover:underline font-medium cursor-pointer transition-colors flex items-center space-x-1 ${labelColor}`}
           >
             <RotateCcw className="w-3 h-3" />
-            <span>Reset Filters</span>
+            <span>{t('resetFilters', lang)}</span>
           </button>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 text-xs">
           <div>
-            <label className={`block text-[11px] font-medium mb-1 ${labelColor}`}>Semester</label>
+            <label className={`block text-[11px] font-medium mb-1 ${labelColor}`}>{t('semester', lang)}</label>
             <select
               value={filter.semester}
               onChange={(e) => setFilter({ ...filter, semester: e.target.value })}
@@ -205,40 +221,40 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
 
           <div>
-            <label className={`block text-[11px] font-medium mb-1 ${labelColor}`}>Period</label>
+            <label className={`block text-[11px] font-medium mb-1 ${labelColor}`}>{t('period', lang)}</label>
             <select
               value={filter.period}
               onChange={(e) => setFilter({ ...filter, period: e.target.value })}
               className={`w-full px-2.5 py-1.5 rounded-lg border font-medium ${inputBg}`}
             >
-              <option value="Monthly">Monthly</option>
-              <option value="Weekly">Weekly</option>
-              <option value="Annual">Annual</option>
+              <option value="Monthly">{t('periodMonthly', lang)}</option>
+              <option value="Weekly">{t('periodWeekly', lang)}</option>
+              <option value="Annual">{t('periodAnnual', lang)}</option>
             </select>
           </div>
 
           <div>
-            <label className={`block text-[11px] font-medium mb-1 ${labelColor}`}>Month</label>
+            <label className={`block text-[11px] font-medium mb-1 ${labelColor}`}>{t('month', lang)}</label>
             <select
               value={filter.month}
               onChange={(e) => setFilter({ ...filter, month: e.target.value })}
               className={`w-full px-2.5 py-1.5 rounded-lg border font-medium ${inputBg}`}
             >
-              <option value="All">All Months</option>
-              <option value="08">August</option>
-              <option value="09">September</option>
-              <option value="10">October</option>
+              <option value="All">{t('allMonths', lang)}</option>
+              <option value="08">{lang === 'id' ? 'Agustus' : 'August'}</option>
+              <option value="09">{lang === 'id' ? 'September' : 'September'}</option>
+              <option value="10">{lang === 'id' ? 'Oktober' : 'October'}</option>
             </select>
           </div>
 
           <div>
-            <label className={`block text-[11px] font-medium mb-1 ${labelColor}`}>Week</label>
+            <label className={`block text-[11px] font-medium mb-1 ${labelColor}`}>{t('week', lang)}</label>
             <select
               value={filter.week}
               onChange={(e) => setFilter({ ...filter, week: e.target.value })}
               className={`w-full px-2.5 py-1.5 rounded-lg border font-medium ${inputBg}`}
             >
-              <option value="All">All Weeks</option>
+              <option value="All">{lang === 'id' ? 'Semua Minggu' : 'All Weeks'}</option>
               <option value="W1">W1 (1-7)</option>
               <option value="W2">W2 (8-14)</option>
               <option value="W3">W3 (15-21)</option>
@@ -248,13 +264,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
 
           <div>
-            <label className={`block text-[11px] font-medium mb-1 ${labelColor}`}>Account</label>
+            <label className={`block text-[11px] font-medium mb-1 ${labelColor}`}>{t('account', lang)}</label>
             <select
               value={filter.account}
               onChange={(e) => setFilter({ ...filter, account: e.target.value })}
               className={`w-full px-2.5 py-1.5 rounded-lg border font-medium ${inputBg}`}
             >
-              <option value="All">All Accounts</option>
+              <option value="All">{t('allAccounts', lang)}</option>
               {accounts.map((a) => (
                 <option key={a.name} value={a.name}>{a.name}</option>
               ))}
@@ -262,61 +278,150 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
 
           <div>
-            <label className={`block text-[11px] font-medium mb-1 ${labelColor}`}>Category</label>
+            <label className={`block text-[11px] font-medium mb-1 ${labelColor}`}>{t('category', lang)}</label>
             <select
               value={filter.category}
               onChange={(e) => setFilter({ ...filter, category: e.target.value })}
               className={`w-full px-2.5 py-1.5 rounded-lg border font-medium ${inputBg}`}
             >
-              <option value="All">All Categories</option>
+              <option value="All">{t('allCategories', lang)}</option>
               {categoriesList.map((c) => (
-                <option key={c} value={c}>{c}</option>
+                <option key={c} value={c}>{formatControlledValue('category', c, lang)}</option>
               ))}
             </select>
           </div>
 
           <div>
-            <label className={`block text-[11px] font-medium mb-1 ${labelColor}`}>Event</label>
+            <label className={`block text-[11px] font-medium mb-1 ${labelColor}`}>{t('event', lang)}</label>
             <select
               value={filter.event}
               onChange={(e) => setFilter({ ...filter, event: e.target.value })}
               className={`w-full px-2.5 py-1.5 rounded-lg border font-medium ${inputBg}`}
             >
-              <option value="All">All Events</option>
-              <option value="College">College</option>
-              <option value="Personal">Personal</option>
-              <option value="Travel">Travel</option>
-              <option value="Food">Food</option>
-              <option value="Shopping">Shopping</option>
-              <option value="Family">Family</option>
+              <option value="All">{t('allEvents', lang)}</option>
+              <option value="College">{formatControlledValue('event', 'College', lang)}</option>
+              <option value="Personal">{formatControlledValue('event', 'Personal', lang)}</option>
+              <option value="Travel">{formatControlledValue('event', 'Travel', lang)}</option>
+              <option value="Food">{formatControlledValue('event', 'Food', lang)}</option>
+              <option value="Shopping">{formatControlledValue('event', 'Shopping', lang)}</option>
+              <option value="Family">{formatControlledValue('event', 'Family', lang)}</option>
             </select>
           </div>
         </div>
       </div>
 
-      {/* Row 1 KPIs (4 Cards: Total Balance, Total Income, Total Expense, Net Saving) */}
+      {/* Total Assets & Dedicated Deposits Overview Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Total Assets Card */}
+        <div className={`md:col-span-2 p-5 rounded-2xl border shadow-xs ${cardBg}`}>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <div className="flex items-center space-x-2">
+                <span className={`text-[10px] font-semibold uppercase tracking-wider ${labelColor}`}>
+                  {t('totalAssets', lang)}
+                </span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 font-semibold border border-amber-500/20">
+                  {lang === 'id' ? 'Likuid + Deposito' : 'Liquid + Deposits'}
+                </span>
+              </div>
+              <div className="mt-2 text-3xl font-light font-heading tracking-tight text-inherit">
+                {formatIDR(totalBalance + totalDeposits)}
+              </div>
+            </div>
+
+            <div className="flex flex-wrap sm:flex-col items-start sm:items-end gap-1.5 pt-2 sm:pt-0 border-t sm:border-t-0 border-inherit">
+              <div className="flex items-center space-x-2 text-xs">
+                <span className={`flex items-center space-x-1 ${labelColor}`}>
+                  <span className="w-2 h-2 rounded-full bg-blue-500 inline-block" />
+                  <span>{t('liquidBalance', lang)}:</span>
+                </span>
+                <span className="font-semibold font-mono">{formatIDR(totalBalance)}</span>
+              </div>
+              <div className="flex items-center space-x-2 text-xs">
+                <span className={`flex items-center space-x-1 ${labelColor}`}>
+                  <span className="w-2 h-2 rounded-full bg-amber-500 inline-block" />
+                  <span>{t('totalDeposits', lang)}:</span>
+                </span>
+                <span className="font-semibold font-mono text-amber-600 dark:text-amber-400">{formatIDR(totalDeposits)}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-3.5 pt-3 border-t border-inherit/60 flex items-center justify-between text-xs">
+            <p className={`text-[11px] ${labelColor}`}>
+              {t('totalAssetsDesc', lang)}
+            </p>
+            {activeDeposits.length > 0 && (
+              <span className="text-emerald-600 dark:text-emerald-400 font-medium text-[11px] flex items-center space-x-1">
+                <TrendingUp className="w-3.5 h-3.5 inline" />
+                <span>{t('estimatedInterest', lang)}: +{formatIDR(totalEstimatedInterest)}</span>
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Compact Deposits Quick Card */}
+        <div className={`p-5 rounded-2xl border shadow-xs flex flex-col justify-between ${cardBg}`}>
+          <div>
+            <div className="flex items-center justify-between">
+              <span className={`text-[10px] font-semibold uppercase tracking-wider ${labelColor}`}>
+                {t('navDeposits', lang)}
+              </span>
+              <div className={`p-1.5 rounded-xl border ${cardAlt}`}>
+                <Landmark className="w-4 h-4 text-amber-500" />
+              </div>
+            </div>
+            <div className="mt-2 text-2xl font-light font-heading tracking-tight text-amber-600 dark:text-amber-400">
+              {formatIDR(totalDeposits)}
+            </div>
+            <div className={`mt-1 text-xs ${labelColor}`}>
+              {activeDeposits.length} {lang === 'id' ? 'deposito aktif' : 'active deposits'} • {activePlatformsCount} {lang === 'id' ? 'platform' : 'platforms'}
+            </div>
+          </div>
+
+          <div className="mt-4 pt-3 border-t border-inherit/60 flex items-center justify-between">
+            <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
+              +{formatIDR(totalEstimatedInterest)} (Est.)
+            </span>
+            {onNavigateToDeposits && (
+              <button
+                type="button"
+                onClick={onNavigateToDeposits}
+                className="text-xs font-semibold text-amber-600 dark:text-amber-400 hover:underline flex items-center space-x-1 cursor-pointer"
+              >
+                <span>{t('viewDeposits', lang)}</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Row 1 KPIs (4 Cards: Liquid Balance, Total Income, Total Expense, Net Saving) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Total Balance */}
+        {/* Liquid Cash Balance */}
         <div className={`p-5 rounded-2xl border shadow-xs ${cardBg}`}>
           <div className="flex items-center justify-between">
             <span className={`text-[10px] font-semibold uppercase tracking-wider ${labelColor}`}>
-              Total Balance
+              {t('liquidBalance', lang)}
             </span>
             <div className={`p-2 rounded-xl border ${cardAlt}`}>
-              <Wallet className="w-4 h-4 text-amber-500" />
+              <Wallet className="w-4 h-4 text-blue-500" />
             </div>
           </div>
           <div className="mt-2 text-2xl font-light font-heading tracking-tight">
             {formatIDR(totalBalance)}
           </div>
-          <div className={`mt-1 text-xs ${labelColor}`}>Across {accounts.length} active accounts</div>
+          <div className={`mt-1 text-xs ${labelColor}`}>
+            {lang === 'id' ? `Dari ${accounts.length} rekening kas/bank likuid` : `Across ${accounts.length} liquid accounts`}
+          </div>
         </div>
 
         {/* Total Income */}
         <div className={`p-5 rounded-2xl border shadow-xs ${cardBg}`}>
           <div className="flex items-center justify-between">
             <span className={`text-[10px] font-semibold uppercase tracking-wider ${labelColor}`}>
-              Total Income
+              {t('totalIncome', lang)}
             </span>
             <div className={`p-2 rounded-xl border ${cardAlt}`}>
               <TrendingUp className="w-4 h-4 text-emerald-500" />
@@ -326,7 +431,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             +{formatIDR(totalIncome)}
           </div>
           <div className="mt-1 text-xs text-emerald-600 dark:text-emerald-400 flex items-center">
-            <ArrowUpRight className="w-3.5 h-3.5 mr-0.5 inline" /> Active inflow
+            <ArrowUpRight className="w-3.5 h-3.5 mr-0.5 inline" /> {lang === 'id' ? 'Arus kas masuk aktif' : 'Active inflow'}
           </div>
         </div>
 
@@ -334,7 +439,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div className={`p-5 rounded-2xl border shadow-xs ${cardBg}`}>
           <div className="flex items-center justify-between">
             <span className={`text-[10px] font-semibold uppercase tracking-wider ${labelColor}`}>
-              Total Expense
+              {t('totalExpense', lang)}
             </span>
             <div className={`p-2 rounded-xl border ${cardAlt}`}>
               <TrendingDown className="w-4 h-4 text-rose-500" />
@@ -344,7 +449,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             -{formatIDR(totalExpense)}
           </div>
           <div className="mt-1 text-xs text-rose-600 dark:text-rose-400 flex items-center">
-            <ArrowDownRight className="w-3.5 h-3.5 mr-0.5 inline" /> Operational spending
+            <ArrowDownRight className="w-3.5 h-3.5 mr-0.5 inline" /> {lang === 'id' ? 'Total pengeluaran tercatat' : 'Operational spending'}
           </div>
         </div>
 
@@ -352,7 +457,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div className={`p-5 rounded-2xl border shadow-xs ${cardBg}`}>
           <div className="flex items-center justify-between">
             <span className={`text-[10px] font-semibold uppercase tracking-wider ${labelColor}`}>
-              Net Saving
+              {t('netSavings', lang)}
             </span>
             <div className={`p-2 rounded-xl border ${cardAlt}`}>
               <PiggyBank className="w-4 h-4 text-amber-500" />
@@ -362,7 +467,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             {formatIDR(netSavings)}
           </div>
           <div className={`mt-1 text-xs ${netSavings >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
-            {netSavings >= 0 ? 'Surplus' : 'Deficit'} this period
+            {netSavings >= 0 ? (lang === 'id' ? 'Surplus periode ini' : 'Surplus this period') : (lang === 'id' ? 'Defisit periode ini' : 'Deficit this period')}
           </div>
         </div>
       </div>
@@ -373,7 +478,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div className={`p-4 rounded-xl border shadow-xs ${cardBg}`}>
           <div className="flex items-center justify-between">
             <span className={`text-[10px] font-semibold uppercase tracking-wider ${labelColor}`}>
-              Saving Rate
+              {t('savingRate', lang)}
             </span>
             <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
               {formatPercent(savingRate)}
@@ -386,7 +491,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             />
           </div>
           <div className={`mt-2 text-[11px] ${labelColor}`}>
-            Benchmark: 20%+ target
+            {lang === 'id' ? 'Target ideal: 20%+' : 'Benchmark: 20%+ target'}
           </div>
         </div>
 
@@ -394,7 +499,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div className={`p-4 rounded-xl border shadow-xs ${cardBg}`}>
           <div className="flex items-center justify-between">
             <span className={`text-[10px] font-semibold uppercase tracking-wider ${labelColor}`}>
-              Budget Left
+              {t('budgetLeft', lang)}
             </span>
             <span className="text-xs font-bold font-mono">
               {formatIDR(budgetLeft)}
@@ -403,11 +508,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="w-full h-1.5 rounded-full mt-3 overflow-hidden bg-black/10 dark:bg-white/10">
             <div
               className="h-full bg-amber-500 rounded-full"
-              style={{ width: `${Math.min(100, Math.max(0, (totalExpense / totalBudget) * 100))}%` }}
+              style={{ width: `${Math.min(100, Math.max(0, (totalExpense / (totalBudget || 1)) * 100))}%` }}
             />
           </div>
           <div className={`mt-2 text-[11px] ${labelColor}`}>
-            Total budget: {formatIDR(totalBudget)}
+            {t('budgetTotal', lang)}: {formatIDR(totalBudget)}
           </div>
         </div>
 
@@ -415,7 +520,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div className={`p-4 rounded-xl border shadow-xs ${cardBg}`}>
           <div className="flex items-center justify-between">
             <span className={`text-[10px] font-semibold uppercase tracking-wider ${labelColor}`}>
-              Emergency Fund
+              {t('emergencyFundTitle', lang)}
             </span>
             <span className="text-xs font-bold font-mono text-emerald-600 dark:text-emerald-400">
               {formatIDR(emergencyFund.currentAmount)}
@@ -424,11 +529,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="w-full h-1.5 rounded-full mt-3 overflow-hidden bg-black/10 dark:bg-white/10">
             <div
               className="h-full bg-emerald-500 rounded-full"
-              style={{ width: `${Math.min(100, (emergencyFund.currentAmount / emergencyFund.targetAmount) * 100)}%` }}
+              style={{ width: `${Math.min(100, (emergencyFund.currentAmount / (emergencyFund.targetAmount || 1)) * 100)}%` }}
             />
           </div>
           <div className={`mt-2 text-[11px] ${labelColor}`}>
-            Target: {formatIDR(emergencyFund.targetAmount)} ({emergencyFund.idealMonths} mos)
+            Target: {formatIDR(emergencyFund.targetAmount)} ({emergencyFund.idealMonths} {t('months', lang)})
           </div>
         </div>
 
@@ -436,7 +541,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         <div className={`p-4 rounded-xl border shadow-xs ${cardBg}`}>
           <div className="flex items-center justify-between">
             <span className={`text-[10px] font-semibold uppercase tracking-wider ${labelColor}`}>
-              Habit Score
+              {t('habitScore', lang)}
             </span>
             <span className="text-xs font-semibold text-amber-500">
               {habitScore} / 100
@@ -446,7 +551,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="h-full bg-amber-500 rounded-full" style={{ width: `${habitScore}%` }} />
           </div>
           <div className={`mt-2 text-[11px] ${labelColor}`}>
-            Consistent daily logging
+            {lang === 'id' ? 'Pencatatan keuangan konsisten' : 'Consistent daily logging'}
           </div>
         </div>
       </div>
@@ -455,17 +560,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       <div className={`p-6 rounded-2xl border shadow-xs ${cardBg}`}>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-base font-semibold font-heading">Cash Flow Trend (Last 6 Months)</h2>
-            <p className={`text-xs ${labelColor}`}>Comparison of monthly inflow versus outflow</p>
+            <h2 className="text-base font-semibold font-heading">{t('cashFlowTrend', lang)}</h2>
+            <p className={`text-xs ${labelColor}`}>{lang === 'id' ? 'Perbandingan arus kas masuk versus keluar bulanan' : 'Comparison of monthly inflow versus outflow'}</p>
           </div>
           <div className="flex items-center space-x-3 text-xs">
             <div className="flex items-center space-x-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-              <span>Income</span>
+              <span>{t('income', lang)}</span>
             </div>
             <div className="flex items-center space-x-1.5">
               <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
-              <span>Expense</span>
+              <span>{t('expense', lang)}</span>
             </div>
           </div>
         </div>
@@ -481,12 +586,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   <div
                     className="w-3 sm:w-5 bg-emerald-500/80 rounded-t-sm transition-all group-hover:bg-emerald-500"
                     style={{ height: `${incH}%` }}
-                    title={`${m.name} Income: ${formatIDR(m.income)}`}
+                    title={`${m.name} ${t('income', lang)}: ${formatIDR(m.income)}`}
                   />
                   <div
                     className="w-3 sm:w-5 bg-rose-500/80 rounded-t-sm transition-all group-hover:bg-rose-500"
                     style={{ height: `${expH}%` }}
-                    title={`${m.name} Expense: ${formatIDR(m.expense)}`}
+                    title={`${m.name} ${t('expense', lang)}: ${formatIDR(m.expense)}`}
                   />
                 </div>
                 <span className={`text-[11px] mt-2 font-medium ${labelColor}`}>{m.name}</span>
@@ -501,8 +606,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {/* Budget Progress (2 Cols) */}
         <div className={`lg:col-span-2 p-6 rounded-2xl border shadow-xs ${cardBg}`}>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-semibold font-heading">Budget & Expense Progress</h2>
-            <span className={`text-xs ${labelColor}`}>Monthly allocations</span>
+            <h2 className="text-base font-semibold font-heading">{t('budgetProgressByCategory', lang)}</h2>
+            <span className={`text-xs ${labelColor}`}>{lang === 'id' ? 'Alokasi bulanan' : 'Monthly allocations'}</span>
           </div>
 
           <div className="space-y-4">
@@ -511,7 +616,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               return (
                 <div key={item.category} className="space-y-1.5">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="font-semibold">{item.category}</span>
+                    <span className="font-semibold">{formatControlledValue('category', item.category, lang)}</span>
                     <div className="space-x-2">
                       <span className="font-mono">{formatIDR(item.spent)}</span>
                       <span className={labelColor}>/ {formatIDR(item.budget)}</span>
@@ -536,14 +641,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
         {/* Expense Grouping by Purpose (Need, Want, Investment) */}
         <div className={`p-6 rounded-2xl border shadow-xs ${cardBg}`}>
-          <h2 className="text-base font-semibold font-heading mb-1">Expense Breakdown</h2>
-          <p className={`text-xs ${labelColor} mb-4`}>Need vs Want vs Investment</p>
+          <h2 className="text-base font-semibold font-heading mb-1">{t('expenseByPurpose', lang)}</h2>
+          <p className={`text-xs ${labelColor} mb-4`}>
+            {lang === 'id' ? 'Kebutuhan vs Keinginan vs Investasi' : 'Need vs Want vs Investment'}
+          </p>
 
           <div className="space-y-4">
             {expenseByPurpose.map((ep) => (
               <div key={ep.purpose} className={`p-3.5 rounded-xl border ${cardAlt}`}>
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-semibold">{ep.purpose}</span>
+                  <span className="font-semibold">{formatControlledValue('purpose', ep.purpose, lang)}</span>
                   <span className="font-bold text-amber-500">{formatPercent(ep.percent)}</span>
                 </div>
                 <div className="text-sm font-light mt-1 font-mono">{formatIDR(ep.total)}</div>
@@ -558,11 +665,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
 
           <div className="mt-5 pt-4 border-t border-inherit">
-            <h3 className="text-xs font-semibold uppercase tracking-wider mb-2">Payment Methods</h3>
+            <h3 className="text-xs font-semibold uppercase tracking-wider mb-2">{t('paymentMethods', lang)}</h3>
             <div className="space-y-1.5 text-xs">
               {expenseByPayment.map((pm) => (
                 <div key={pm.method} className="flex justify-between items-center py-1">
-                  <span className={labelColor}>{pm.method}</span>
+                  <span className={labelColor}>{formatControlledValue('paymentMethod', pm.method, lang)}</span>
                   <span className="font-mono font-medium">{formatIDR(pm.total)}</span>
                 </div>
               ))}
@@ -575,19 +682,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Top 5 Expenses */}
         <div className={`p-6 rounded-2xl border shadow-xs ${cardBg}`}>
-          <h2 className="text-base font-semibold font-heading mb-1">Top 5 Expenses</h2>
-          <p className={`text-xs ${labelColor} mb-4`}>Largest individual outflows this period</p>
+          <h2 className="text-base font-semibold font-heading mb-1">{t('topExpenses', lang)}</h2>
+          <p className={`text-xs ${labelColor} mb-4`}>
+            {lang === 'id' ? 'Pengeluaran terbesar periode ini' : 'Largest individual outflows this period'}
+          </p>
 
           <div className="divide-y divide-inherit">
             {top5Expenses.length === 0 ? (
-              <div className={`text-xs py-4 text-center ${labelColor}`}>No expenses recorded</div>
+              <div className={`text-xs py-4 text-center ${labelColor}`}>{t('noTransactionsFound', lang)}</div>
             ) : (
               top5Expenses.map((tx) => (
                 <div key={tx.id} className="py-2.5 flex items-center justify-between text-xs">
                   <div>
                     <div className="font-medium truncate max-w-xs">{tx.description}</div>
                     <div className={`text-[10px] ${labelColor}`}>
-                      {tx.date} • {tx.category} • {tx.account}
+                      {tx.date} • {formatControlledValue('category', tx.category, lang)} • {tx.account}
                     </div>
                   </div>
                   <div className="font-mono font-semibold text-rose-600 dark:text-rose-400">
@@ -602,7 +711,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {/* Savings Goals Widget */}
         <div className={`p-6 rounded-2xl border shadow-xs ${cardBg}`}>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-semibold font-heading">Savings Goals Snapshot</h2>
+            <h2 className="text-base font-semibold font-heading">{t('savingsTargetProgress', lang)}</h2>
             <Target className="w-4 h-4 text-amber-500" />
           </div>
 

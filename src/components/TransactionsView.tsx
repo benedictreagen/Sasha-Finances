@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Transaction, ListsConfig, GoogleConnectionState, ThemeMode } from '../types';
 import { formatIDR } from '../excelGenerator';
 import { getThemeTokens } from '../theme';
+import { Language, t, formatControlledValue } from '../i18n';
 import { 
   Plus, 
   Trash2, 
@@ -33,6 +34,7 @@ interface TransactionsViewProps {
   onRefreshSync?: () => Promise<void>;
   onConnectGoogleSheets?: () => Promise<void>;
   spreadsheetUrl?: string | null;
+  lang?: Language;
 }
 
 export const TransactionsView: React.FC<TransactionsViewProps> = ({
@@ -49,6 +51,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
   onRefreshSync,
   onConnectGoogleSheets,
   spreadsheetUrl,
+  lang = 'id',
 }) => {
   const tokens = getThemeTokens(theme);
   const isDark = tokens.isDark;
@@ -124,7 +127,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center space-x-2">
-            <h1 className="text-2xl font-bold font-heading">Transactions Ledger</h1>
+            <h1 className="text-2xl font-bold font-heading">{t('transactionsTitle', lang)}</h1>
             {isConnected && (
               <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -133,7 +136,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
             )}
           </div>
           <p className={`text-xs mt-1 ${labelColor}`}>
-            Persistent financial ledger synchronized with Google Sheets single source of truth.
+            {t('transactionsSubtitle', lang)}
           </p>
         </div>
 
@@ -150,7 +153,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
                 className={`px-3 py-2 rounded-xl border text-xs font-semibold cursor-pointer transition-colors ${cardAlt} hover:bg-black/5 dark:hover:bg-white/5 flex items-center space-x-1.5 disabled:opacity-50`}
               >
                 <RefreshCw className={`w-3.5 h-3.5 text-emerald-500 ${isSyncing ? 'animate-spin' : ''}`} />
-                <span>{isSyncing ? 'Syncing...' : 'Refresh Sync'}</span>
+                <span>{isSyncing ? (lang === 'id' ? 'Menyinkronkan...' : 'Syncing...') : (lang === 'id' ? 'Segarkan Sinkronisasi' : 'Refresh Sync')}</span>
               </button>
 
               {spreadsheetUrl && (
@@ -174,7 +177,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
               className={`px-3 py-2 rounded-xl border text-xs font-semibold cursor-pointer transition-colors bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 flex items-center space-x-1.5`}
             >
               <Lock className="w-3.5 h-3.5" />
-              <span>Sign In to Sync</span>
+              <span>{lang === 'id' ? 'Masuk untuk Sinkron' : 'Sign In to Sync'}</span>
             </button>
           ) : (
             <button
@@ -185,7 +188,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
               className={`px-3 py-2 rounded-xl border text-xs font-semibold cursor-pointer transition-colors ${cardAlt} hover:bg-black/5 dark:hover:bg-white/5 flex items-center space-x-1.5 text-amber-500`}
             >
               <FileSpreadsheet className="w-3.5 h-3.5" />
-              <span>Connect Google Sheets</span>
+              <span>{lang === 'id' ? 'Hubungkan Google Sheets' : 'Connect Google Sheets'}</span>
             </button>
           )}
 
@@ -193,7 +196,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
             onClick={() => setIsCsvModalOpen(true)}
             className={`px-3 py-2 rounded-xl border text-xs font-semibold cursor-pointer transition-colors ${cardAlt} hover:bg-black/5 dark:hover:bg-white/5`}
           >
-            Import CSV
+            {t('importCsv', lang)}
           </button>
 
           <button
@@ -202,7 +205,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
             className={`px-3 py-2 rounded-xl border text-xs font-semibold cursor-pointer transition-colors ${cardAlt} hover:bg-black/5 dark:hover:bg-white/5 flex items-center space-x-1.5`}
           >
             <Download className="w-3.5 h-3.5 text-amber-500" />
-            <span>Export .xlsx</span>
+            <span>{t('exportBackup', lang)}</span>
           </button>
 
           <button
@@ -213,7 +216,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
             className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-black text-xs font-semibold cursor-pointer transition-colors shadow-xs"
           >
             <Plus className="w-4 h-4" />
-            <span>+ Add Transaction</span>
+            <span>{t('addTransaction', lang)}</span>
           </button>
         </div>
       </div>
@@ -226,7 +229,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
             <Search className={`absolute left-3.5 top-2.5 w-4 h-4 ${labelColor}`} />
             <input
               type="text"
-              placeholder="Search description, notes, category..."
+              placeholder={t('searchPlaceholder', lang)}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className={`w-full pl-10 pr-4 py-2 rounded-xl border text-xs font-medium focus:outline-none focus:ring-1 focus:ring-amber-500 ${inputBg}`}
@@ -241,10 +244,10 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
               onChange={(e) => setSortBy(e.target.value as any)}
               className={`px-3 py-2 rounded-xl border text-xs font-medium focus:outline-none ${inputBg}`}
             >
-              <option value="date-desc">Newest Date</option>
-              <option value="date-asc">Oldest Date</option>
-              <option value="amount-desc">Highest Amount</option>
-              <option value="amount-asc">Lowest Amount</option>
+              <option value="date-desc">{t('dateDesc', lang)}</option>
+              <option value="date-asc">{t('dateAsc', lang)}</option>
+              <option value="amount-desc">{t('amountDesc', lang)}</option>
+              <option value="amount-asc">{t('amountAsc', lang)}</option>
             </select>
           </div>
         </div>
@@ -252,41 +255,41 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
         {/* Filter dropdowns */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t border-inherit">
           <div>
-            <label className={`block text-[11px] mb-1 font-medium ${labelColor}`}>Type</label>
+            <label className={`block text-[11px] mb-1 font-medium ${labelColor}`}>{t('type', lang)}</label>
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
               className={`w-full px-2.5 py-1.5 rounded-lg border font-medium ${inputBg}`}
             >
-              <option value="All">All Types</option>
-              {listsConfig.types.map((t) => (
-                <option key={t} value={t}>{t}</option>
+              <option value="All">{t('all', lang)} {t('type', lang)}</option>
+              {listsConfig.types.map((tVal) => (
+                <option key={tVal} value={tVal}>{formatControlledValue('type', tVal, lang)}</option>
               ))}
             </select>
           </div>
 
           <div>
-            <label className={`block text-[11px] mb-1 font-medium ${labelColor}`}>Category</label>
+            <label className={`block text-[11px] mb-1 font-medium ${labelColor}`}>{t('category', lang)}</label>
             <select
               value={filterCategory}
               onChange={(e) => setFilterCategory(e.target.value)}
               className={`w-full px-2.5 py-1.5 rounded-lg border font-medium ${inputBg}`}
             >
-              <option value="All">All Categories</option>
+              <option value="All">{t('allCategories', lang)}</option>
               {listsConfig.categories.map((c) => (
-                <option key={c} value={c}>{c}</option>
+                <option key={c} value={c}>{formatControlledValue('category', c, lang)}</option>
               ))}
             </select>
           </div>
 
           <div>
-            <label className={`block text-[11px] mb-1 font-medium ${labelColor}`}>Account</label>
+            <label className={`block text-[11px] mb-1 font-medium ${labelColor}`}>{t('account', lang)}</label>
             <select
               value={filterAccount}
               onChange={(e) => setFilterAccount(e.target.value)}
               className={`w-full px-2.5 py-1.5 rounded-lg border font-medium ${inputBg}`}
             >
-              <option value="All">All Accounts</option>
+              <option value="All">{t('allAccounts', lang)}</option>
               {listsConfig.accounts.map((a) => (
                 <option key={a.name} value={a.name}>{a.name}</option>
               ))}
@@ -294,16 +297,16 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
           </div>
 
           <div>
-            <label className={`block text-[11px] mb-1 font-medium ${labelColor}`}>Month</label>
+            <label className={`block text-[11px] mb-1 font-medium ${labelColor}`}>{t('month', lang)}</label>
             <select
               value={filterMonth}
               onChange={(e) => setFilterMonth(e.target.value)}
               className={`w-full px-2.5 py-1.5 rounded-lg border font-medium ${inputBg}`}
             >
-              <option value="All">All Months</option>
-              <option value="08">August (08)</option>
-              <option value="09">September (09)</option>
-              <option value="10">October (10)</option>
+              <option value="All">{t('allMonths', lang)}</option>
+              <option value="08">{lang === 'id' ? 'Agustus' : 'August'} (08)</option>
+              <option value="09">{lang === 'id' ? 'September' : 'September'} (09)</option>
+              <option value="10">{lang === 'id' ? 'Oktober' : 'October'} (10)</option>
             </select>
           </div>
         </div>
@@ -312,7 +315,9 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
       {/* Transaction Records Count & Status */}
       <div className="flex items-center justify-between text-xs px-1">
         <span className={labelColor}>
-          Showing <strong>{sorted.length}</strong> of {transactions.length} transactions
+          {lang === 'id' 
+            ? <>Menampilkan <strong>{sorted.length}</strong> dari {transactions.length} transaksi</>
+            : <>Showing <strong>{sorted.length}</strong> of {transactions.length} transactions</>}
         </span>
         {(search || filterType !== 'All' || filterCategory !== 'All' || filterAccount !== 'All' || filterMonth !== 'All') && (
           <button
@@ -325,7 +330,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
             }}
             className="text-amber-500 hover:underline cursor-pointer font-medium"
           >
-            Clear Active Filters
+            {lang === 'id' ? 'Hapus Filter Aktif' : 'Clear Active Filters'}
           </button>
         )}
       </div>
@@ -336,22 +341,22 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className={`border-b border-inherit font-semibold ${tableHeaderBg}`}>
-                <th className="py-3 px-4">Date</th>
-                <th className="py-3 px-4">Description</th>
-                <th className="py-3 px-4">Type</th>
-                <th className="py-3 px-4">Category</th>
-                <th className="py-3 px-4">Account</th>
-                <th className="py-3 px-4">Method</th>
-                <th className="py-3 px-4">Purpose</th>
-                <th className="py-3 px-4 text-right">Amount</th>
-                <th className="py-3 px-4 text-center">Actions</th>
+                <th className="py-3 px-4">{t('date', lang)}</th>
+                <th className="py-3 px-4">{t('description', lang)}</th>
+                <th className="py-3 px-4">{t('type', lang)}</th>
+                <th className="py-3 px-4">{t('category', lang)}</th>
+                <th className="py-3 px-4">{t('account', lang)}</th>
+                <th className="py-3 px-4">{t('paymentMethod', lang)}</th>
+                <th className="py-3 px-4">{t('purpose', lang)}</th>
+                <th className="py-3 px-4 text-right">{t('amount', lang)}</th>
+                <th className="py-3 px-4 text-center">{t('actions', lang)}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-inherit">
               {sorted.length === 0 ? (
                 <tr>
                   <td colSpan={9} className={`py-12 text-center ${labelColor}`}>
-                    No matching transactions found. Try adjusting filters or record a new transaction.
+                    {lang === 'id' ? 'Tidak ada transaksi yang cocok ditemukan.' : 'No matching transactions found. Try adjusting filters or record a new transaction.'}
                   </td>
                 </tr>
               ) : (
@@ -380,12 +385,12 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
                               : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
                           }`}
                         >
-                          {tx.type}
+                          {formatControlledValue('type', tx.type, lang)}
                         </span>
                       </td>
                       <td className="py-3.5 px-4 whitespace-nowrap">
                         <span className={`px-2 py-0.5 rounded-md border ${cardAlt} font-medium text-[11px]`}>
-                          {tx.category}
+                          {formatControlledValue('category', tx.category, lang)}
                         </span>
                       </td>
                       <td className="py-3.5 px-4 whitespace-nowrap">
@@ -398,11 +403,11 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
                         )}
                       </td>
                       <td className="py-3.5 px-4 whitespace-nowrap text-[11px]">
-                        {tx.paymentMethod}
+                        {formatControlledValue('paymentMethod', tx.paymentMethod, lang)}
                       </td>
                       <td className="py-3.5 px-4 whitespace-nowrap">
                         <span className={`text-[11px] ${labelColor}`}>
-                          {tx.purpose}
+                          {formatControlledValue('purpose', tx.purpose, lang)}
                         </span>
                       </td>
                       <td className="py-3.5 px-4 text-right font-mono font-semibold whitespace-nowrap">
@@ -426,14 +431,14 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
                               setIsAddModalOpen(true);
                             }}
                             className={`p-1.5 rounded-lg hover:bg-amber-500/10 hover:text-amber-500 cursor-pointer transition-colors ${labelColor}`}
-                            title="Edit transaction in Google Sheet"
+                            title="Edit transaction"
                           >
                             <Edit3 className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => onDeleteTransaction(tx.id)}
                             className={`p-1.5 rounded-lg hover:bg-rose-500/10 hover:text-rose-500 cursor-pointer transition-colors ${labelColor}`}
-                            title="Delete transaction from Google Sheet"
+                            title="Delete transaction"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -460,6 +465,7 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
         initialTransaction={editingTransaction}
         listsConfig={listsConfig}
         theme={theme}
+        lang={lang}
       />
 
       {/* CSV Import Modal */}

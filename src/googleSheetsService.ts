@@ -1,4 +1,4 @@
-import { Transaction, AccountInfo, SavingsGoal, EmergencyFundData, ListsConfig, GoogleConnectionState } from './types';
+import { Transaction, AccountInfo, SavingsGoal, EmergencyFundData, ListsConfig, GoogleConnectionState, Deposit } from './types';
 import { DEFAULT_LISTS_CONFIG } from './data';
 
 export interface GoogleSyncResult {
@@ -153,6 +153,7 @@ export async function ensureSpreadsheetTabs(
     'Lists',
     'Monthly Summary',
     'Weekly Summary',
+    'Deposits',
   ];
 
   const missingSheets = REQUIRED_SHEETS.filter(
@@ -213,6 +214,7 @@ export async function createPermanentGoogleSheet(
         { properties: { title: 'Lists' } },
         { properties: { title: 'Monthly Summary' } },
         { properties: { title: 'Weekly Summary' } },
+        { properties: { title: 'Deposits' } },
       ],
     }),
   });
@@ -439,7 +441,148 @@ export async function writeTransactionsToGoogleSheet(
 }
 
 /**
- * Fully populates or synchronizes all 8 sheets in the Google Spreadsheet
+ * Fetches deposits directly from Google Sheets Deposits sheet (A2:K200)
+ */
+export async function fetchDepositsFromGoogleSheet(
+  accessToken: string,
+  spreadsheetId: string
+): Promise<Deposit[]> {
+  try {
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Deposits!A2:K200`;
+    const res = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (!res.ok) {
+      if (res.status === 400 || res.status === 404) {
+        return [];
+      }
+      await handleApiError(res, 'Failed to fetch deposits from Google Sheet');
+    }
+
+    const data = await res.json();
+    const rows: any[][] = data.values || [];
+
+    const parsedDeposits: Deposit[] = [];
+
+    rows.forEach((row, idx) => {
+      if (!row || row.length === 0 || !row[1] || !row[2]) {
+        return;
+      }
+
+      const id = String(row[0] || `dep-${idx + 1}`).trim();
+      const platform = String(row[1]).trim();
+      const name = String(row[2]).trim();
+      const rawPrincipal = typeof row[3] === 'number' ? row[3] : parseFloat(String(row[3] || '0').replace(/[^0-9.-]+/g, '')) || 0;
+      const principal = Math.abs(rawPrincipal);
+      const rawRate = typeof row[4] === 'number' ? row[4] : parseFloat(String(row[4] || '0').replace(/[^0-9.-]+/g, '')) || 0;
+      const interestRate = Math.abs(rawRate);
+      const startDate = String(row[5] || '').trim();
+      const maturityDate = String(row[6] || '').trim();
+      const rawEstInterest = typeof row[7] === 'number' ? row[7] : parseFloat(String(row[7] || '0').replace(/[^0-9.-]+/g, '')) || 0;
+      const estimatedInterest = Math.abs(rawEstInterest);
+      const rawStatus = String(row[8] || 'Active').trim();
+      const validStatuses: Deposit['status'][] = ['Active', 'Matured', 'Withdrawn', 'Reinvested'];
+      const status: Deposit['status'] = validStatuses.includes(rawStatus as any) ? (rawStatus as any) : 'Active';
+      const sourceAccount = row[9] ? String(row[9]).trim() : undefined;
+      const notes = row[10] ? String(row[10]).trim() : '';
+
+      parsedDeposits.push({
+        id,
+        platform,
+        name,
+        principal,
+        interestRate,
+        startDate,
+        maturityDate,
+        estimatedInterest,
+        status,
+        sourceAccount,
+        notes,
+      });
+    });
+
+    return parsedDeposits;
+  } catch (err) {
+    console.warn('Could not read deposits from Google Sheet:', err);
+    return [];
+  }
+}
+
+/**
+ * Writes the deposits list into Deposits!A1:K, keeping Google Sheets up to date
+ */
+export async function writeDepositsToGoogleSheet(
+  accessToken: string,
+  spreadsheetId: string,
+  deposits: Deposit[]
+): Promise<void> {
+  try {
+    const meta = await getSpreadsheetMetadata(accessToken, spreadsheetId);
+    await ensureSpreadsheetTabs(accessToken, spreadsheetId, meta.sheetTitles);
+  } catch {
+    // proceed
+  }
+
+  // Clear previous deposits range
+  await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Deposits!A1:K200:clear`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  const headerRow = [
+    'Deposit ID',
+    'Platform',
+    'Deposit Name',
+    'Principal',
+    'Interest Rate (%)',
+    'Start Date',
+    'Maturity Date',
+    'Estimated Interest',
+    'Status',
+    'Source Account',
+    'Notes',
+  ];
+
+  const dataRows = deposits.map((d) => [
+    d.id,
+    d.platform,
+    d.name,
+    d.principal,
+    d.interestRate,
+    d.startDate,
+    d.maturityDate,
+    d.estimatedInterest,
+    d.status,
+    d.sourceAccount || '',
+    d.notes || '',
+  ]);
+
+  const updateRes = await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Deposits!A1:K${dataRows.length + 1}?valueInputOption=USER_ENTERED`,
+    {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        values: [headerRow, ...dataRows],
+      }),
+    }
+  );
+
+  if (!updateRes.ok) {
+    await handleApiError(updateRes, 'Failed to write deposits to Google Sheets');
+  }
+}
+
+/**
+ * Fully populates or synchronizes all sheets in the Google Spreadsheet
  */
 export async function writeAllDataToGoogleSheet(
   accessToken: string,
@@ -449,8 +592,16 @@ export async function writeAllDataToGoogleSheet(
   budgets: Record<string, number>,
   goals: SavingsGoal[],
   emergencyFund: EmergencyFundData,
-  listsConfig: ListsConfig = DEFAULT_LISTS_CONFIG
+  listsConfig: ListsConfig = DEFAULT_LISTS_CONFIG,
+  deposits: Deposit[] = []
 ): Promise<void> {
+  // Ensure tabs exist including Deposits
+  try {
+    const meta = await getSpreadsheetMetadata(accessToken, spreadsheetId);
+    await ensureSpreadsheetTabs(accessToken, spreadsheetId, meta.sheetTitles);
+  } catch {
+    // proceed
+  }
   // Lists
   const typesList = listsConfig.types || ['Opening Balance', 'Income', 'Expense', 'Transfer', 'Adjustment'];
   const catsList = listsConfig.categories || ['Food', 'Transportation', 'Education', 'Organization', 'Health', 'Shopping', 'Entertainment', 'Other'];
@@ -594,6 +745,24 @@ export async function writeAllDataToGoogleSheet(
     }),
   ];
 
+  // Deposits values
+  const depositsValues = [
+    ['Deposit ID', 'Platform', 'Deposit Name', 'Principal', 'Interest Rate (%)', 'Start Date', 'Maturity Date', 'Estimated Interest', 'Status', 'Source Account', 'Notes'],
+    ...deposits.map((d) => [
+      d.id,
+      d.platform,
+      d.name,
+      d.principal,
+      d.interestRate,
+      d.startDate,
+      d.maturityDate,
+      d.estimatedInterest,
+      d.status,
+      d.sourceAccount || '',
+      d.notes || '',
+    ]),
+  ];
+
   // Batch Update Values
   const dataPayload = [
     { range: 'Lists!A1', values: listsValues },
@@ -604,6 +773,7 @@ export async function writeAllDataToGoogleSheet(
     { range: 'Monthly Summary!A1', values: monthValues },
     { range: 'Weekly Summary!A1', values: weekValues },
     { range: 'Dashboard!A1', values: dashValues },
+    { range: 'Deposits!A1', values: depositsValues },
   ];
 
   const batchRes = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values:batchUpdate`, {

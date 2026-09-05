@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
 import { User } from 'firebase/auth';
-import { ListsConfig, ThemeMode, AccountInfo, GoogleConnectionState } from '../types';
+import { ListsConfig, ThemeMode, AccountInfo, GoogleConnectionState, Deposit } from '../types';
 import { formatIDR } from '../excelGenerator';
 import { ThemeSelector } from './ThemeSelector';
+import { BannerSettings } from './BannerSettings';
+import { LanguageSelector } from './LanguageSelector';
+import { BannerConfig } from '../banner';
+import { Language, t } from '../i18n';
 import { getThemeTokens } from '../theme';
 import { 
   Sun, 
@@ -25,7 +29,11 @@ import {
   Unlink,
   Lock,
   AlertTriangle,
-  Link2
+  Link2,
+  Image as ImageIcon,
+  Globe,
+  Building,
+  Edit2
 } from 'lucide-react';
 
 interface SettingsViewProps {
@@ -51,6 +59,15 @@ interface SettingsViewProps {
   onDisconnectGoogleSheets: () => void;
   onPushAllToGoogleSheets?: () => Promise<void>;
   onLinkSpreadsheetId: (idOrUrl: string) => Promise<void>;
+  
+  // Banner & Language
+  lang: Language;
+  onSelectLanguage: (lang: Language) => void;
+  bannerConfig: BannerConfig;
+  onChangeBannerConfig: (newConfig: BannerConfig) => void;
+  initialTab?: 'appearance' | 'banner' | 'language' | 'categories' | 'accounts' | 'platforms' | 'lists' | 'sync';
+  deposits?: Deposit[];
+  onRenamePlatformInDeposits?: (oldName: string, newName: string) => void;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
@@ -74,10 +91,17 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onDisconnectGoogleSheets,
   onPushAllToGoogleSheets,
   onLinkSpreadsheetId,
+  lang,
+  onSelectLanguage,
+  bannerConfig,
+  onChangeBannerConfig,
+  initialTab = 'sync',
+  deposits = [],
+  onRenamePlatformInDeposits,
 }) => {
   const isDark = theme === 'dark';
 
-  const [activeTab, setActiveTab] = useState<'appearance' | 'categories' | 'accounts' | 'lists' | 'sync'>('sync');
+  const [activeTab, setActiveTab] = useState<'appearance' | 'banner' | 'language' | 'categories' | 'accounts' | 'platforms' | 'lists' | 'sync'>(initialTab);
 
   // Category addition state
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -90,6 +114,69 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
   // New Event tag state
   const [newEventName, setNewEventName] = useState('');
+
+  // Deposit Platform state
+  const [newPlatformName, setNewPlatformName] = useState('');
+  const [editingPlatformOld, setEditingPlatformOld] = useState<string | null>(null);
+  const [editingPlatformNew, setEditingPlatformNew] = useState('');
+  const [platformSuccess, setPlatformSuccess] = useState('');
+
+  const currentPlatforms = listsConfig.depositPlatforms || [
+    'Seabank',
+    'Bank Jago',
+    'Blu by BCA',
+    'BCA',
+    'Bank Mandiri',
+    'Bibit',
+    'Pluang',
+    'Aladin',
+  ];
+
+  const handleAddPlatform = (e: React.FormEvent) => {
+    e.preventDefault();
+    const name = newPlatformName.trim();
+    if (!name || currentPlatforms.includes(name)) return;
+
+    const updated = {
+      ...listsConfig,
+      depositPlatforms: [...currentPlatforms, name],
+    };
+    onUpdateListsConfig(updated);
+    setNewPlatformName('');
+    setPlatformSuccess(t('toastPlatformAdded', lang));
+    setTimeout(() => setPlatformSuccess(''), 3000);
+  };
+
+  const handleRenamePlatform = (oldName: string) => {
+    const newName = editingPlatformNew.trim();
+    if (!newName || newName === oldName) {
+      setEditingPlatformOld(null);
+      return;
+    }
+    const updated = {
+      ...listsConfig,
+      depositPlatforms: currentPlatforms.map((p) => (p === oldName ? newName : p)),
+    };
+    onUpdateListsConfig(updated);
+    if (onRenamePlatformInDeposits) {
+      onRenamePlatformInDeposits(oldName, newName);
+    }
+    setEditingPlatformOld(null);
+    setEditingPlatformNew('');
+    setPlatformSuccess(t('toastPlatformRenamed', lang));
+    setTimeout(() => setPlatformSuccess(''), 3000);
+  };
+
+  const handleRemovePlatform = (platToRemove: string) => {
+    if (currentPlatforms.length <= 1) return;
+    const updated = {
+      ...listsConfig,
+      depositPlatforms: currentPlatforms.filter((p) => p !== platToRemove),
+    };
+    onUpdateListsConfig(updated);
+    setPlatformSuccess(t('toastPlatformDeleted', lang));
+    setTimeout(() => setPlatformSuccess(''), 3000);
+  };
 
   // Link existing spreadsheet input state
   const [inputSpreadsheetUrl, setInputSpreadsheetUrl] = useState('');
@@ -197,20 +284,23 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     <div className="space-y-6">
       {/* Page Title */}
       <div>
-        <h1 className="text-2xl font-bold font-heading">Settings & Customization</h1>
+        <h1 className="text-2xl font-bold font-heading">{t('settingsTitle', lang)}</h1>
         <p className={`text-xs mt-1 ${labelColor}`}>
-          Configure workspace theme, customize dropdown categories and accounts, and manage your permanent Google Sheet database.
+          {t('settingsSubtitle', lang)}
         </p>
       </div>
 
       {/* Settings Navigation Tabs */}
       <div className="flex flex-wrap gap-2 pb-2 border-b border-inherit">
         {[
-          { id: 'sync', label: 'Google Sheets Database', icon: FileSpreadsheet },
-          { id: 'appearance', label: 'Theme & Styling', icon: Sun },
-          { id: 'categories', label: 'Editable Categories', icon: Tag },
-          { id: 'accounts', label: 'Manage Accounts', icon: Landmark },
-          { id: 'lists', label: 'Dropdown Lists', icon: Layers },
+          { id: 'sync', label: t('tabSync', lang), icon: FileSpreadsheet },
+          { id: 'banner', label: t('tabBanner', lang), icon: ImageIcon },
+          { id: 'language', label: t('tabLanguage', lang), icon: Globe },
+          { id: 'appearance', label: t('tabAppearance', lang), icon: Sun },
+          { id: 'categories', label: t('tabCategories', lang), icon: Tag },
+          { id: 'accounts', label: t('tabAccounts', lang), icon: Landmark },
+          { id: 'platforms', label: t('tabPlatforms', lang), icon: Building },
+          { id: 'lists', label: t('tabLists', lang), icon: Layers },
         ].map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -688,7 +778,31 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
       )}
 
-      {/* Tab 1: Appearance / Theme */}
+      {/* Tab: Dashboard Cover Banner */}
+      {activeTab === 'banner' && (
+        <BannerSettings
+          config={bannerConfig}
+          onChangeConfig={onChangeBannerConfig}
+          lang={lang}
+          cardBg={cardBg}
+          cardAlt={cardAlt}
+          labelColor={labelColor}
+          inputBg={inputBg}
+        />
+      )}
+
+      {/* Tab: Language Preferences */}
+      {activeTab === 'language' && (
+        <LanguageSelector
+          currentLanguage={lang}
+          onSelectLanguage={onSelectLanguage}
+          cardBg={cardBg}
+          cardAlt={cardAlt}
+          labelColor={labelColor}
+        />
+      )}
+
+      {/* Tab: Appearance / Theme */}
       {activeTab === 'appearance' && (
         <div className="space-y-6 max-w-4xl">
           <div className={`p-6 rounded-2xl border shadow-xs ${cardBg}`}>
@@ -920,6 +1034,134 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     + Tag
                   </button>
                 </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 8. DEPOSIT PLATFORMS TAB */}
+      {activeTab === 'platforms' && (
+        <div className="space-y-6">
+          <div className={`p-6 rounded-2xl border shadow-xs space-y-5 ${cardBg}`}>
+            <div>
+              <h3 className="text-base font-bold font-heading flex items-center space-x-2">
+                <Building className="w-5 h-5 text-amber-500" />
+                <span>{t('platformManagement', lang)}</span>
+              </h3>
+              <p className={`text-xs ${labelColor} mt-1`}>
+                {t('platformManagementDesc', lang)}
+              </p>
+            </div>
+
+            {platformSuccess && (
+              <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs rounded-xl flex items-center space-x-2">
+                <Check className="w-4 h-4" />
+                <span>{platformSuccess}</span>
+              </div>
+            )}
+
+            {/* Add Platform Form */}
+            <form onSubmit={handleAddPlatform} className="flex flex-col sm:flex-row gap-2.5">
+              <input
+                type="text"
+                required
+                placeholder={lang === 'id' ? 'Nama platform baru (cth: Krom Bank, Amar Bank, Bibit Plus)...' : 'New platform name (e.g. Krom Bank, Amar Bank)...'}
+                value={newPlatformName}
+                onChange={(e) => setNewPlatformName(e.target.value)}
+                className={`flex-1 px-3.5 py-2 text-xs rounded-xl border ${inputBg}`}
+              />
+              <button
+                type="submit"
+                className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-black text-xs font-semibold rounded-xl cursor-pointer shadow-xs transition-colors flex items-center justify-center space-x-1.5"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>{t('addPlatform', lang)}</span>
+              </button>
+            </form>
+
+            {/* Platforms List */}
+            <div className="space-y-2 pt-2 border-t border-inherit">
+              <h4 className="text-xs font-semibold uppercase tracking-wider mb-3">
+                {lang === 'id' ? 'Daftar Platform Terdaftar' : 'Registered Platform Providers'} ({currentPlatforms.length})
+              </h4>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                {currentPlatforms.map((platform) => {
+                  const matchingDeposits = deposits.filter((d) => d.platform === platform);
+                  const activeCount = matchingDeposits.filter((d) => d.status === 'Active').length;
+                  const isEditingThis = editingPlatformOld === platform;
+
+                  return (
+                    <div
+                      key={platform}
+                      className={`p-3 rounded-xl border flex items-center justify-between transition-colors ${cardAlt}`}
+                    >
+                      {isEditingThis ? (
+                        <div className="flex items-center space-x-1.5 flex-1 mr-2">
+                          <input
+                            type="text"
+                            value={editingPlatformNew}
+                            onChange={(e) => setEditingPlatformNew(e.target.value)}
+                            className={`w-full px-2 py-1 text-xs rounded-lg border ${inputBg}`}
+                            autoFocus
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleRenamePlatform(platform)}
+                            className="p-1.5 rounded-lg bg-emerald-500 text-white cursor-pointer hover:bg-emerald-600"
+                            title="Save"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEditingPlatformOld(null)}
+                            className="p-1.5 rounded-lg border border-inherit text-inherit cursor-pointer"
+                            title="Cancel"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center space-x-2 truncate mr-2">
+                          <span className="text-xs font-semibold truncate text-inherit">{platform}</span>
+                          {activeCount > 0 && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 font-semibold border border-amber-500/20 whitespace-nowrap">
+                              {activeCount} {lang === 'id' ? 'aktif' : 'active'}
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      {!isEditingThis && (
+                        <div className="flex items-center space-x-1 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingPlatformOld(platform);
+                              setEditingPlatformNew(platform);
+                            }}
+                            className="p-1 rounded-lg border border-inherit text-inherit hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                            title={lang === 'id' ? 'Ganti Nama' : 'Rename'}
+                          >
+                            <Edit2 className="w-3 h-3" />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleRemovePlatform(platform)}
+                            disabled={currentPlatforms.length <= 1}
+                            className="p-1 rounded-lg border border-rose-500/30 text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer disabled:opacity-30"
+                            title={lang === 'id' ? 'Hapus Platform' : 'Remove Platform'}
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>

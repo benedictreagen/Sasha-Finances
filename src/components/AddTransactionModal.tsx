@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Transaction, ListsConfig, ThemeMode } from '../types';
 import { getThemeTokens } from '../theme';
+import { Language, t, formatControlledValue } from '../i18n';
 import { X, Plus, Edit2 } from 'lucide-react';
 
 interface AddTransactionModalProps {
@@ -11,6 +12,7 @@ interface AddTransactionModalProps {
   initialTransaction?: Transaction | null;
   listsConfig: ListsConfig;
   theme?: ThemeMode;
+  lang?: Language;
 }
 
 export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
@@ -21,6 +23,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
   initialTransaction,
   listsConfig,
   theme = 'dark',
+  lang = 'id',
 }) => {
   const tokens = getThemeTokens(theme);
   const isDark = tokens.isDark;
@@ -125,10 +128,12 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
             </div>
             <div>
               <h2 className="text-lg font-semibold font-heading">
-                {isEditMode ? 'Edit Transaction' : 'Record New Transaction'}
+                {isEditMode 
+                  ? (lang === 'id' ? 'Edit Transaksi' : 'Edit Transaction') 
+                  : (lang === 'id' ? 'Catat Transaksi Baru' : 'Record New Transaction')}
               </h2>
               <p className={`text-xs ${labelColor}`}>
-                Writes directly to your permanent Google Spreadsheet
+                {lang === 'id' ? 'Tersimpan langsung ke Google Sheets permanen Anda' : 'Writes directly to your permanent Google Spreadsheet'}
               </p>
             </div>
           </div>
@@ -143,7 +148,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
         <form onSubmit={handleSubmit} className="mt-5 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className={`block text-xs font-medium mb-1.5 ${labelColor}`}>Date</label>
+              <label className={`block text-xs font-medium mb-1.5 ${labelColor}`}>{t('date', lang)}</label>
               <input
                 type="date"
                 required
@@ -154,7 +159,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
             </div>
 
             <div>
-              <label className={`block text-xs font-medium mb-1.5 ${labelColor}`}>Amount (IDR)</label>
+              <label className={`block text-xs font-medium mb-1.5 ${labelColor}`}>{t('amount', lang)} (IDR)</label>
               <input
                 type="number"
                 required
@@ -169,11 +174,11 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
           </div>
 
           <div>
-            <label className={`block text-xs font-medium mb-1.5 ${labelColor}`}>Description</label>
+            <label className={`block text-xs font-medium mb-1.5 ${labelColor}`}>{t('description', lang)}</label>
             <input
               type="text"
               required
-              placeholder="e.g. Lunch with friends, Course payment, Salary..."
+              placeholder={lang === 'id' ? 'cth: Makan siang bareng teman, Kursus, Gaji...' : 'e.g. Lunch with friends, Course payment, Salary...'}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className={`w-full px-3 py-2 rounded-xl border text-sm font-medium focus:outline-none focus:ring-1 focus:ring-amber-500 ${inputBg}`}
@@ -182,27 +187,27 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className={`block text-xs font-medium mb-1.5 ${labelColor}`}>Type</label>
+              <label className={`block text-xs font-medium mb-1.5 ${labelColor}`}>{t('type', lang)}</label>
               <select
                 value={type}
                 onChange={(e) => setType(e.target.value)}
                 className={`w-full px-3 py-2 rounded-xl border text-sm font-medium focus:outline-none focus:ring-1 focus:ring-amber-500 ${inputBg}`}
               >
-                {listsConfig.types.map((t) => (
-                  <option key={t} value={t}>{t}</option>
+                {listsConfig.types.map((tVal) => (
+                  <option key={tVal} value={tVal}>{formatControlledValue('type', tVal, lang)}</option>
                 ))}
               </select>
             </div>
 
             <div>
-              <label className={`block text-xs font-medium mb-1.5 ${labelColor}`}>Category</label>
+              <label className={`block text-xs font-medium mb-1.5 ${labelColor}`}>{t('category', lang)}</label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 className={`w-full px-3 py-2 rounded-xl border text-sm font-medium focus:outline-none focus:ring-1 focus:ring-amber-500 ${inputBg}`}
               >
                 {listsConfig.categories.map((c) => (
-                  <option key={c} value={c}>{c}</option>
+                  <option key={c} value={c}>{formatControlledValue('category', c, lang)}</option>
                 ))}
               </select>
             </div>
@@ -211,7 +216,7 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className={`block text-xs font-medium mb-1.5 ${labelColor}`}>
-                {type === 'Transfer' ? 'From Account' : 'Account'}
+                {type === 'Transfer' ? (lang === 'id' ? 'Dari Akun' : 'From Account') : t('account', lang)}
               </label>
               <select
                 value={account}
@@ -226,7 +231,9 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
 
             {type === 'Transfer' ? (
               <div>
-                <label className={`block text-xs font-medium mb-1.5 ${labelColor}`}>To Destination Account</label>
+                <label className={`block text-xs font-medium mb-1.5 ${labelColor}`}>
+                  {lang === 'id' ? 'Ke Akun Tujuan' : 'To Destination Account'}
+                </label>
                 <select
                   value={toAccount}
                   onChange={(e) => setToAccount(e.target.value)}
@@ -241,66 +248,55 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
               </div>
             ) : (
               <div>
-                <label className={`block text-xs font-medium mb-1.5 ${labelColor}`}>Payment Method</label>
+                <label className={`block text-xs font-medium mb-1.5 ${labelColor}`}>{t('paymentMethod', lang)}</label>
                 <select
                   value={paymentMethod}
                   onChange={(e) => setPaymentMethod(e.target.value)}
                   className={`w-full px-3 py-2 rounded-xl border text-sm font-medium focus:outline-none focus:ring-1 focus:ring-amber-500 ${inputBg}`}
                 >
                   {listsConfig.paymentMethods.map((pm) => (
-                    <option key={pm} value={pm}>{pm}</option>
+                    <option key={pm} value={pm}>{formatControlledValue('paymentMethod', pm, lang)}</option>
                   ))}
                 </select>
               </div>
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className={`block text-xs font-medium mb-1.5 ${labelColor}`}>Method</label>
-              <select
-                value={paymentMethod}
-                onChange={(e) => setPaymentMethod(e.target.value)}
-                className={`w-full px-3 py-2 rounded-xl border text-sm font-medium focus:outline-none focus:ring-1 focus:ring-amber-500 ${inputBg}`}
-              >
-                {listsConfig.paymentMethods.map((pm) => (
-                  <option key={pm} value={pm}>{pm}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className={`block text-xs font-medium mb-1.5 ${labelColor}`}>Purpose</label>
+              <label className={`block text-xs font-medium mb-1.5 ${labelColor}`}>{t('purpose', lang)}</label>
               <select
                 value={purpose}
                 onChange={(e) => setPurpose(e.target.value)}
                 className={`w-full px-3 py-2 rounded-xl border text-sm font-medium focus:outline-none focus:ring-1 focus:ring-amber-500 ${inputBg}`}
               >
                 {listsConfig.purposes.map((p) => (
-                  <option key={p} value={p}>{p}</option>
+                  <option key={p} value={p}>{formatControlledValue('purpose', p, lang)}</option>
                 ))}
               </select>
             </div>
 
             <div>
-              <label className={`block text-xs font-medium mb-1.5 ${labelColor}`}>Event / Tag</label>
+              <label className={`block text-xs font-medium mb-1.5 ${labelColor}`}>{t('event', lang)}</label>
               <select
                 value={event}
                 onChange={(e) => setEvent(e.target.value)}
                 className={`w-full px-3 py-2 rounded-xl border text-sm font-medium focus:outline-none focus:ring-1 focus:ring-amber-500 ${inputBg}`}
               >
                 {listsConfig.events.map((ev) => (
-                  <option key={ev} value={ev}>{ev}</option>
+                  <option key={ev} value={ev}>{formatControlledValue('event', ev, lang)}</option>
                 ))}
               </select>
             </div>
           </div>
 
           <div>
-            <label className={`block text-xs font-medium mb-1.5 ${labelColor}`}>Notes (Optional)</label>
+            <label className={`block text-xs font-medium mb-1.5 ${labelColor}`}>
+              {t('notes', lang)} ({lang === 'id' ? 'Opsional' : 'Optional'})
+            </label>
             <input
               type="text"
-              placeholder="e.g. Split bill with friends, promo discount applied..."
+              placeholder={lang === 'id' ? 'cth: Split bill teman, promo diskon...' : 'e.g. Split bill with friends, promo discount applied...'}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               className={`w-full px-3 py-2 rounded-xl border text-sm font-medium focus:outline-none focus:ring-1 focus:ring-amber-500 ${inputBg}`}
@@ -313,13 +309,15 @@ export const AddTransactionModal: React.FC<AddTransactionModalProps> = ({
               onClick={onClose}
               className={`px-4 py-2 text-sm font-medium rounded-xl transition-colors cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 ${labelColor}`}
             >
-              Cancel
+              {t('cancel', lang)}
             </button>
             <button
               type="submit"
               className="px-5 py-2 text-sm font-semibold rounded-xl bg-amber-500 hover:bg-amber-600 text-black transition-colors cursor-pointer shadow-xs"
             >
-              {isEditMode ? 'Update in Google Sheet' : 'Save to Google Sheet'}
+              {isEditMode 
+                ? (lang === 'id' ? 'Perbarui di Google Sheets' : 'Update in Google Sheet') 
+                : (lang === 'id' ? 'Simpan ke Google Sheets' : 'Save to Google Sheet')}
             </button>
           </div>
         </form>

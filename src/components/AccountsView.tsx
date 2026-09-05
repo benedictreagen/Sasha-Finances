@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { AccountInfo, Transaction, ListsConfig, ThemeMode } from '../types';
 import { formatIDR } from '../excelGenerator';
 import { getThemeTokens } from '../theme';
+import { Language, t } from '../i18n';
 import { 
   Wallet, 
   Landmark, 
@@ -17,6 +18,7 @@ interface AccountsViewProps {
   listsConfig: ListsConfig;
   onAddTransaction: (tx: Omit<Transaction, 'id' | 'income' | 'expense'>) => void;
   theme?: ThemeMode;
+  lang?: Language;
 }
 
 export const AccountsView: React.FC<AccountsViewProps> = ({
@@ -25,6 +27,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
   listsConfig,
   onAddTransaction,
   theme = 'dark',
+  lang = 'id',
 }) => {
   const tokens = getThemeTokens(theme);
   const isDark = tokens.isDark;
@@ -122,9 +125,11 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
       {/* Header bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold font-heading">Accounts & Balances</h1>
+          <h1 className="text-2xl font-bold font-heading">{t('accountsTitle', lang)}</h1>
           <p className={`text-xs mt-1 ${labelColor}`}>
-            Reconciled across {accounts.length} active financial accounts. Transfers do not alter net totals.
+            {lang === 'id' 
+              ? `Terekonsiliasi di seluruh ${accounts.length} akun finansial aktif. Transfer antar akun tidak mengubah total kekayaan.` 
+              : `Reconciled across ${accounts.length} active financial accounts. Transfers do not alter net totals.`}
           </p>
         </div>
         <button
@@ -132,7 +137,7 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
           className="inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-black text-xs font-semibold cursor-pointer transition-colors shadow-xs"
         >
           <ArrowRightLeft className="w-4 h-4" />
-          <span>Quick Inter-Account Transfer</span>
+          <span>{lang === 'id' ? 'Transfer Antar-Akun Cepat' : 'Quick Inter-Account Transfer'}</span>
         </button>
       </div>
 
@@ -141,33 +146,33 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div>
             <span className={`text-[11px] font-semibold uppercase tracking-wider ${labelColor}`}>
-              Consolidated Net Worth
+              {lang === 'id' ? 'Kekayaan Bersih Konsolidasi' : 'Consolidated Net Worth'}
             </span>
             <div className="text-3xl font-light mt-1 font-heading tracking-tight">{formatIDR(totalBalance)}</div>
             <div className="flex items-center space-x-2 mt-2">
               <span className="inline-flex items-center text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                <ShieldCheck className="w-3.5 h-3.5 mr-1" /> Reconciled in real-time
+                <ShieldCheck className="w-3.5 h-3.5 mr-1" /> {lang === 'id' ? 'Terekonsiliasi langsung' : 'Reconciled in real-time'}
               </span>
-              <span className={`text-xs ${labelColor}`}>• Opening: {formatIDR(totalOpening)}</span>
+              <span className={`text-xs ${labelColor}`}>• {lang === 'id' ? 'Saldo Awal' : 'Opening'}: {formatIDR(totalOpening)}</span>
             </div>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 border-t lg:border-t-0 lg:border-l border-inherit pt-4 lg:pt-0 lg:pl-6">
             <div>
-              <div className={`text-[10px] uppercase font-semibold ${labelColor}`}>Total Inflow</div>
+              <div className={`text-[10px] uppercase font-semibold ${labelColor}`}>{lang === 'id' ? 'Total Pemasukan' : 'Total Inflow'}</div>
               <div className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
                 +{formatIDR(totalInflow)}
               </div>
             </div>
             <div>
-              <div className={`text-[10px] uppercase font-semibold ${labelColor}`}>Total Outflow</div>
+              <div className={`text-[10px] uppercase font-semibold ${labelColor}`}>{lang === 'id' ? 'Total Pengeluaran' : 'Total Outflow'}</div>
               <div className="text-sm font-semibold text-rose-600 dark:text-rose-400 mt-0.5">
                 -{formatIDR(totalOutflow)}
               </div>
             </div>
             <div>
-              <div className={`text-[10px] uppercase font-semibold ${labelColor}`}>Total Accounts</div>
-              <div className="text-sm font-semibold mt-0.5">{accounts.length} Active</div>
+              <div className={`text-[10px] uppercase font-semibold ${labelColor}`}>{lang === 'id' ? 'Total Akun' : 'Total Accounts'}</div>
+              <div className="text-sm font-semibold mt-0.5">{accounts.length} {lang === 'id' ? 'Aktif' : 'Active'}</div>
             </div>
           </div>
         </div>
@@ -190,12 +195,14 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
                 </div>
               </div>
               <span className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center font-medium">
-                <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Active
+                <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> {lang === 'id' ? 'Aktif' : 'Active'}
               </span>
             </div>
 
             <div className="mt-5">
-              <span className={`text-[10px] uppercase font-semibold ${labelColor}`}>Current Reconciled Balance</span>
+              <span className={`text-[10px] uppercase font-semibold ${labelColor}`}>
+                {lang === 'id' ? 'Saldo Terkini Terekonsiliasi' : 'Current Reconciled Balance'}
+              </span>
               <div className="text-xl font-bold font-heading mt-0.5">
                 {formatIDR(acc.computedBalance)}
               </div>
@@ -203,19 +210,19 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
 
             <div className={`mt-4 pt-3 border-t border-inherit space-y-1.5 text-xs ${labelColor}`}>
               <div className="flex justify-between">
-                <span>Opening Balance</span>
+                <span>{lang === 'id' ? 'Saldo Awal' : 'Opening Balance'}</span>
                 <span className="font-medium text-inherit">{formatIDR(acc.openingBalance)}</span>
               </div>
               <div className="flex justify-between text-emerald-600 dark:text-emerald-400">
-                <span>Income / Inflow</span>
+                <span>{lang === 'id' ? 'Pemasukan / Inflow' : 'Income / Inflow'}</span>
                 <span className="font-medium">+{formatIDR(acc.incomeInflow)}</span>
               </div>
               <div className="flex justify-between text-rose-600 dark:text-rose-400">
-                <span>Expense / Outflow</span>
+                <span>{lang === 'id' ? 'Pengeluaran / Outflow' : 'Expense / Outflow'}</span>
                 <span className="font-medium">-{formatIDR(acc.expenseOutflow)}</span>
               </div>
               <div className="flex justify-between">
-                <span>Net Transfers</span>
+                <span>{lang === 'id' ? 'Transfer Bersih' : 'Net Transfers'}</span>
                 <span className={`font-medium ${acc.netTransfers >= 0 ? 'text-blue-500' : 'text-amber-500'}`}>
                   {acc.netTransfers >= 0 ? '+' : ''}{formatIDR(acc.netTransfers)}
                 </span>
@@ -234,14 +241,20 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
                 <ArrowRightLeft className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-base font-semibold font-heading">Inter-Account Transfer</h3>
-                <p className={`text-xs ${labelColor}`}>Total consolidated balance will remain unchanged</p>
+                <h3 className="text-base font-semibold font-heading">
+                  {lang === 'id' ? 'Transfer Antar-Akun' : 'Inter-Account Transfer'}
+                </h3>
+                <p className={`text-xs ${labelColor}`}>
+                  {lang === 'id' ? 'Total saldo konsolidasi akan tetap sama' : 'Total consolidated balance will remain unchanged'}
+                </p>
               </div>
             </div>
 
             <form onSubmit={handleTransferSubmit} className="mt-4 space-y-4">
               <div>
-                <label className={`block text-xs font-medium mb-1.5 ${labelColor}`}>Source Account (From)</label>
+                <label className={`block text-xs font-medium mb-1.5 ${labelColor}`}>
+                  {lang === 'id' ? 'Akun Sumber (Dari)' : 'Source Account (From)'}
+                </label>
                 <select
                   value={fromAccount}
                   onChange={(e) => setFromAccount(e.target.value)}
@@ -254,7 +267,9 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
               </div>
 
               <div>
-                <label className={`block text-xs font-medium mb-1.5 ${labelColor}`}>Destination Account (To)</label>
+                <label className={`block text-xs font-medium mb-1.5 ${labelColor}`}>
+                  {lang === 'id' ? 'Akun Tujuan (Ke)' : 'Destination Account (To)'}
+                </label>
                 <select
                   value={toAccount}
                   onChange={(e) => setToAccount(e.target.value)}
@@ -267,7 +282,9 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
               </div>
 
               <div>
-                <label className={`block text-xs font-medium mb-1.5 ${labelColor}`}>Amount (IDR)</label>
+                <label className={`block text-xs font-medium mb-1.5 ${labelColor}`}>
+                  {t('amount', lang)} (IDR)
+                </label>
                 <input
                   type="number"
                   required
@@ -280,12 +297,14 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
               </div>
 
               <div>
-                <label className={`block text-xs font-medium mb-1.5 ${labelColor}`}>Description / Notes</label>
+                <label className={`block text-xs font-medium mb-1.5 ${labelColor}`}>
+                  {t('description', lang)} / {t('notes', lang)}
+                </label>
                 <input
                   type="text"
                   value={transferNotes}
                   onChange={(e) => setTransferNotes(e.target.value)}
-                  placeholder="e.g. Top up e-wallet for lunch"
+                  placeholder={lang === 'id' ? 'cth: Top up e-wallet untuk makan siang' : 'e.g. Top up e-wallet for lunch'}
                   className={`w-full px-3 py-2 rounded-xl border text-sm font-medium focus:outline-none focus:ring-1 focus:ring-amber-500 ${inputBg}`}
                 />
               </div>
@@ -296,13 +315,13 @@ export const AccountsView: React.FC<AccountsViewProps> = ({
                   onClick={() => setIsTransferModalOpen(false)}
                   className={`px-4 py-2 text-xs font-medium rounded-xl hover:bg-black/5 dark:hover:bg-white/5 ${labelColor}`}
                 >
-                  Cancel
+                  {t('cancel', lang)}
                 </button>
                 <button
                   type="submit"
                   className="px-5 py-2 text-xs font-semibold rounded-xl bg-amber-500 hover:bg-amber-600 text-black transition-colors cursor-pointer"
                 >
-                  Confirm Transfer
+                  {lang === 'id' ? 'Konfirmasi Transfer' : 'Confirm Transfer'}
                 </button>
               </div>
             </form>

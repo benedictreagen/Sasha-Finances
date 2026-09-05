@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { SavingsGoal, EmergencyFundData, ThemeMode } from '../types';
 import { formatIDR, formatPercent } from '../excelGenerator';
 import { getThemeTokens } from '../theme';
+import { Language, t } from '../i18n';
 import { 
   Target, 
   ShieldAlert, 
@@ -19,6 +20,7 @@ interface GoalsViewProps {
   emergencyFund: EmergencyFundData;
   onUpdateEmergencyFund: (ef: EmergencyFundData) => void;
   theme?: ThemeMode;
+  lang?: Language;
 }
 
 export const GoalsView: React.FC<GoalsViewProps> = ({
@@ -27,6 +29,7 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
   emergencyFund,
   onUpdateEmergencyFund,
   theme = 'dark',
+  lang = 'id',
 }) => {
   const tokens = getThemeTokens(theme);
   const isDark = tokens.isDark;
@@ -114,9 +117,11 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
       {/* Header bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold font-heading">Savings Goals & Emergency Fund</h1>
+          <h1 className="text-2xl font-bold font-heading">{t('goalsTitle', lang)}</h1>
           <p className={`text-xs mt-1 ${labelColor}`}>
-            Track financial targets and maintain your liquid emergency safety cushion.
+            {lang === 'id' 
+              ? 'Pantau target keuangan dan pelihara dana darurat likuid Anda.' 
+              : 'Track financial targets and maintain your liquid emergency safety cushion.'}
           </p>
         </div>
         <div className="flex items-center space-x-3">
@@ -124,14 +129,14 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
             onClick={() => setIsDepositModalOpen(true)}
             className={`px-3.5 py-2 rounded-xl border text-xs font-semibold cursor-pointer transition-colors ${cardAlt} hover:bg-black/5 dark:hover:bg-white/5`}
           >
-            + Quick Contribution
+            + {lang === 'id' ? 'Setoran Cepat' : 'Quick Contribution'}
           </button>
           <button
             onClick={() => setIsAddGoalModalOpen(true)}
             className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-black text-xs font-semibold cursor-pointer transition-colors shadow-xs"
           >
             <Plus className="w-4 h-4" />
-            <span>Create New Goal</span>
+            <span>{lang === 'id' ? 'Buat Target Baru' : 'Create New Goal'}</span>
           </button>
         </div>
       </div>
@@ -141,17 +146,19 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div>
             <span className={`text-[11px] font-semibold uppercase tracking-wider ${labelColor}`}>
-              Total Savings Portfolio
+              {lang === 'id' ? 'Total Portofolio Tabungan' : 'Total Savings Portfolio'}
             </span>
             <div className="text-3xl font-light mt-1 font-heading tracking-tight">{formatIDR(totalSaved)}</div>
             <div className={`text-xs mt-1 ${labelColor}`}>
-              Targeting {formatIDR(totalTarget)} across {goals.length} structured goals
+              {lang === 'id' 
+                ? `Menargetkan ${formatIDR(totalTarget)} dari ${goals.length} target terstruktur` 
+                : `Targeting ${formatIDR(totalTarget)} across ${goals.length} structured goals`}
             </div>
           </div>
 
           <div className="w-full lg:w-96">
             <div className="flex justify-between text-xs font-medium mb-1.5">
-              <span>Aggregate Milestone</span>
+              <span>{lang === 'id' ? 'Pencapaian Agregat' : 'Aggregate Milestone'}</span>
               <span className="font-semibold text-amber-500">{formatPercent(overallProgress)}</span>
             </div>
             <div className="w-full h-3 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
@@ -161,8 +168,8 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
               />
             </div>
             <div className={`flex justify-between text-[11px] mt-1.5 ${labelColor}`}>
-              <span>Funded: {formatIDR(totalSaved)}</span>
-              <span>Gap: {formatIDR(Math.max(0, totalTarget - totalSaved))}</span>
+              <span>{lang === 'id' ? 'Terkumpul' : 'Funded'}: {formatIDR(totalSaved)}</span>
+              <span>{lang === 'id' ? 'Kekurangan' : 'Gap'}: {formatIDR(Math.max(0, totalTarget - totalSaved))}</span>
             </div>
           </div>
         </div>
@@ -173,9 +180,11 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold font-heading flex items-center space-x-2">
             <Target className="w-5 h-5 text-amber-500" />
-            <span>Active Financial Targets</span>
+            <span>{lang === 'id' ? 'Target Finansial Aktif' : 'Active Financial Targets'}</span>
           </h2>
-          <span className={`text-xs ${labelColor}`}>{goals.length} Goals Recorded</span>
+          <span className={`text-xs ${labelColor}`}>
+            {goals.length} {lang === 'id' ? 'Target Tercatat' : 'Goals Recorded'}
+          </span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -195,11 +204,11 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
                   </div>
                   {isCompleted ? (
                     <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                      Complete
+                      {lang === 'id' ? 'Selesai' : 'Complete'}
                     </span>
                   ) : (
                     <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full border ${cardAlt} ${labelColor}`}>
-                      In Progress
+                      {lang === 'id' ? 'Berjalan' : 'In Progress'}
                     </span>
                   )}
                 </div>
@@ -207,7 +216,7 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
                 <div className="mt-5 space-y-2">
                   <div className="flex items-baseline justify-between">
                     <span className="text-xl font-bold font-heading">{formatIDR(g.saved)}</span>
-                    <span className={`text-xs ${labelColor}`}>Target: {formatIDR(g.targetBalance)}</span>
+                    <span className={`text-xs ${labelColor}`}>{lang === 'id' ? 'Target' : 'Target'}: {formatIDR(g.targetBalance)}</span>
                   </div>
 
                   <div className="w-full h-2 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
@@ -222,7 +231,7 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
                   <div className="flex justify-between text-xs pt-1">
                     <span className="font-semibold">{formatPercent(pct)}</span>
                     <span className={labelColor}>
-                      {isCompleted ? 'Target achieved!' : `${formatIDR(remaining)} left`}
+                      {isCompleted ? (lang === 'id' ? 'Target tercapai!' : 'Target achieved!') : `${formatIDR(remaining)} ${lang === 'id' ? 'lagi' : 'left'}`}
                     </span>
                   </div>
                 </div>
@@ -230,7 +239,7 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
                 <div className={`mt-4 pt-3 border-t border-inherit flex items-center justify-between text-xs ${labelColor}`}>
                   <div className="flex items-center space-x-1.5">
                     <Calendar className="w-3.5 h-3.5" />
-                    <span>Target Date: {g.targetDate}</span>
+                    <span>{lang === 'id' ? 'Batas Waktu' : 'Target Date'}: {g.targetDate}</span>
                   </div>
                 </div>
               </div>
@@ -244,25 +253,29 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-2">
             <ShieldAlert className="w-5 h-5 text-emerald-500" />
-            <h2 className="text-lg font-semibold font-heading">Emergency Fund Calculator</h2>
+            <h2 className="text-lg font-semibold font-heading">
+              {lang === 'id' ? 'Kalkulator Dana Darurat' : 'Emergency Fund Calculator'}
+            </h2>
           </div>
           <button
             onClick={() => setIsEditingEF(!isEditingEF)}
             className={`text-xs font-semibold px-3 py-1.5 rounded-lg border ${cardAlt} cursor-pointer hover:bg-black/5 dark:hover:bg-white/5`}
           >
             <Sliders className="w-3.5 h-3.5 inline mr-1" />
-            {isEditingEF ? 'Close Editor' : 'Adjust Formula'}
+            {isEditingEF ? (lang === 'id' ? 'Tutup Editor' : 'Close Editor') : (lang === 'id' ? 'Atur Parameter' : 'Adjust Formula')}
           </button>
         </div>
 
         <div className={`p-6 rounded-2xl border shadow-xs ${cardBg}`}>
           {isEditingEF && (
             <div className={`p-4 rounded-xl border mb-6 ${cardAlt}`}>
-              <h4 className="text-sm font-semibold font-heading mb-3">Adjust Benchmark Parameters</h4>
+              <h4 className="text-sm font-semibold font-heading mb-3">
+                {lang === 'id' ? 'Sesuaikan Parameter Standar' : 'Adjust Benchmark Parameters'}
+              </h4>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className={`block text-xs font-medium mb-1 ${labelColor}`}>
-                    Target Coverage: {efMonths} Months
+                    {lang === 'id' ? 'Target Cakupan' : 'Target Coverage'}: {efMonths} {lang === 'id' ? 'Bulan' : 'Months'}
                   </label>
                   <input
                     type="range"
@@ -274,15 +287,15 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
                     className="w-full accent-amber-500"
                   />
                   <div className={`flex justify-between text-[10px] mt-1 ${labelColor}`}>
-                    <span>3 Months (Lean)</span>
-                    <span>6 Months (Standard)</span>
-                    <span>12 Months (Cautious)</span>
+                    <span>3 {lang === 'id' ? 'Bulan (Minimal)' : 'Months (Lean)'}</span>
+                    <span>6 {lang === 'id' ? 'Bulan (Standar)' : 'Months (Standard)'}</span>
+                    <span>12 {lang === 'id' ? 'Bulan (Aman)' : 'Months (Cautious)'}</span>
                   </div>
                 </div>
 
                 <div>
                   <label className={`block text-xs font-medium mb-1 ${labelColor}`}>
-                    Monthly Essential Expenses (IDR)
+                    {lang === 'id' ? 'Pengeluaran Wajib Bulanan (IDR)' : 'Monthly Essential Expenses (IDR)'}
                   </label>
                   <input
                     type="number"
@@ -298,7 +311,7 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
                   onClick={handleSaveEF}
                   className="px-4 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-black text-xs font-semibold cursor-pointer"
                 >
-                  Apply & Recalculate
+                  {lang === 'id' ? 'Simpan & Hitung Ulang' : 'Apply & Recalculate'}
                 </button>
               </div>
             </div>
@@ -306,46 +319,58 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className={`p-4 rounded-xl border ${cardAlt}`}>
-              <div className={`text-xs font-medium ${labelColor}`}>Monthly Essential Expenses</div>
+              <div className={`text-xs font-medium ${labelColor}`}>
+                {lang === 'id' ? 'Pengeluaran Wajib Bulanan' : 'Monthly Essential Expenses'}
+              </div>
               <div className="text-xl font-bold font-heading mt-1">
                 {formatIDR(emergencyFund.monthlyEssentialExpense)}
               </div>
-              <div className={`text-[11px] mt-1 ${labelColor}`}>Baseline survival cost</div>
+              <div className={`text-[11px] mt-1 ${labelColor}`}>
+                {lang === 'id' ? 'Biaya kebutuhan bertahan hidup' : 'Baseline survival cost'}
+              </div>
             </div>
 
             <div className={`p-4 rounded-xl border ${cardAlt}`}>
-              <div className={`text-xs font-medium ${labelColor}`}>Coverage Target</div>
+              <div className={`text-xs font-medium ${labelColor}`}>
+                {lang === 'id' ? 'Target Cakupan' : 'Coverage Target'}
+              </div>
               <div className="text-xl font-bold font-heading mt-1">
-                {emergencyFund.idealMonths} Months
+                {emergencyFund.idealMonths} {lang === 'id' ? 'Bulan' : 'Months'}
               </div>
               <div className={`text-[11px] mt-1 ${labelColor}`}>Total: {formatIDR(efTarget)}</div>
             </div>
 
             <div className={`p-4 rounded-xl border ${cardAlt}`}>
-              <div className={`text-xs font-medium ${labelColor}`}>Current Liquid Fund</div>
+              <div className={`text-xs font-medium ${labelColor}`}>
+                {lang === 'id' ? 'Dana Likuid Saat Ini' : 'Current Liquid Fund'}
+              </div>
               <div className="text-xl font-bold font-heading mt-1 text-emerald-600 dark:text-emerald-400">
                 {formatIDR(emergencyFund.currentAmount)}
               </div>
               <div className={`text-[11px] mt-1 ${labelColor}`}>
-                Provides {currentMonthsCovered} months of runway
+                {lang === 'id' ? `Menyediakan ${currentMonthsCovered} bulan cadangan` : `Provides ${currentMonthsCovered} months of runway`}
               </div>
             </div>
 
             <div className={`p-4 rounded-xl border ${cardAlt}`}>
-              <div className={`text-xs font-medium ${labelColor}`}>Coverage Status</div>
+              <div className={`text-xs font-medium ${labelColor}`}>
+                {lang === 'id' ? 'Status Cakupan' : 'Coverage Status'}
+              </div>
               <div className="text-xl font-bold font-heading mt-1 text-amber-500">
                 {formatPercent(efProgress)}
               </div>
               <div className={`text-[11px] mt-1 ${labelColor}`}>
-                Shortfall: {formatIDR(Math.max(0, efTarget - emergencyFund.currentAmount))}
+                {lang === 'id' ? 'Kekurangan' : 'Shortfall'}: {formatIDR(Math.max(0, efTarget - emergencyFund.currentAmount))}
               </div>
             </div>
           </div>
 
           <div className="mt-6">
             <div className="flex justify-between text-xs font-medium mb-1.5">
-              <span>Safety Net Progress</span>
-              <span className="font-semibold">{currentMonthsCovered} / {emergencyFund.idealMonths} Months Funded</span>
+              <span>{lang === 'id' ? 'Progres Jaring Pengaman' : 'Safety Net Progress'}</span>
+              <span className="font-semibold">
+                {currentMonthsCovered} / {emergencyFund.idealMonths} {lang === 'id' ? 'Bulan Terpenuhi' : 'Months Funded'}
+              </span>
             </div>
             <div className="w-full h-3 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
               <div
@@ -362,15 +387,17 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
           <div className={`w-full max-w-md rounded-2xl border shadow-xl p-6 ${cardBg}`}>
             <h3 className="text-base font-semibold font-heading pb-3 border-b border-inherit">
-              Create New Savings Goal
+              {lang === 'id' ? 'Buat Target Tabungan Baru' : 'Create New Savings Goal'}
             </h3>
             <form onSubmit={handleAddGoal} className="mt-4 space-y-4">
               <div>
-                <label className={`block text-xs font-medium mb-1 ${labelColor}`}>Goal Name</label>
+                <label className={`block text-xs font-medium mb-1 ${labelColor}`}>
+                  {lang === 'id' ? 'Nama Target' : 'Goal Name'}
+                </label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. New Camera Lens, Umrah, Investment fund..."
+                  placeholder={lang === 'id' ? 'cth: Lensa Kamera Baru, Umroh, Dana Investasi...' : 'e.g. New Camera Lens, Umrah, Investment fund...'}
                   value={newGoalName}
                   onChange={(e) => setNewGoalName(e.target.value)}
                   className={`w-full px-3 py-2 rounded-xl border text-sm font-medium ${inputBg}`}
@@ -379,7 +406,9 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className={`block text-xs font-medium mb-1 ${labelColor}`}>Target (IDR)</label>
+                  <label className={`block text-xs font-medium mb-1 ${labelColor}`}>
+                    {lang === 'id' ? 'Target (IDR)' : 'Target (IDR)'}
+                  </label>
                   <input
                     type="number"
                     required
@@ -390,7 +419,9 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
                   />
                 </div>
                 <div>
-                  <label className={`block text-xs font-medium mb-1 ${labelColor}`}>Currently Saved</label>
+                  <label className={`block text-xs font-medium mb-1 ${labelColor}`}>
+                    {lang === 'id' ? 'Terkumpul Saat Ini' : 'Currently Saved'}
+                  </label>
                   <input
                     type="number"
                     min="0"
@@ -402,7 +433,9 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
               </div>
 
               <div>
-                <label className={`block text-xs font-medium mb-1 ${labelColor}`}>Target Date</label>
+                <label className={`block text-xs font-medium mb-1 ${labelColor}`}>
+                  {lang === 'id' ? 'Batas Waktu (Target Date)' : 'Target Date'}
+                </label>
                 <input
                   type="text"
                   placeholder="DD/MM/YYYY"
@@ -418,13 +451,13 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
                   onClick={() => setIsAddGoalModalOpen(false)}
                   className={`px-4 py-2 text-xs font-medium rounded-xl hover:bg-black/5 dark:hover:bg-white/5 ${labelColor}`}
                 >
-                  Cancel
+                  {t('cancel', lang)}
                 </button>
                 <button
                   type="submit"
                   className="px-5 py-2 text-xs font-semibold rounded-xl bg-amber-500 hover:bg-amber-600 text-black transition-colors"
                 >
-                  Save Goal
+                  {lang === 'id' ? 'Simpan Target' : 'Save Goal'}
                 </button>
               </div>
             </form>
@@ -437,11 +470,13 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
           <div className={`w-full max-w-md rounded-2xl border shadow-xl p-6 ${cardBg}`}>
             <h3 className="text-base font-semibold font-heading pb-3 border-b border-inherit">
-              Contribute to Savings Goal
+              {lang === 'id' ? 'Tambah Setoran Tabungan' : 'Contribute to Savings Goal'}
             </h3>
             <form onSubmit={handleDeposit} className="mt-4 space-y-4">
               <div>
-                <label className={`block text-xs font-medium mb-1 ${labelColor}`}>Select Goal</label>
+                <label className={`block text-xs font-medium mb-1 ${labelColor}`}>
+                  {lang === 'id' ? 'Pilih Target' : 'Select Goal'}
+                </label>
                 <select
                   value={selectedGoalId}
                   onChange={(e) => setSelectedGoalId(e.target.value)}
@@ -449,14 +484,16 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
                 >
                   {goals.map((g) => (
                     <option key={g.id} value={g.id}>
-                      {g.name} (Current: {formatIDR(g.saved)} / {formatIDR(g.targetBalance)})
+                      {g.name} ({lang === 'id' ? 'Saat ini' : 'Current'}: {formatIDR(g.saved)} / {formatIDR(g.targetBalance)})
                     </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className={`block text-xs font-medium mb-1 ${labelColor}`}>Deposit Amount (IDR)</label>
+                <label className={`block text-xs font-medium mb-1 ${labelColor}`}>
+                  {lang === 'id' ? 'Jumlah Setoran (IDR)' : 'Deposit Amount (IDR)'}
+                </label>
                 <input
                   type="number"
                   required
@@ -474,13 +511,13 @@ export const GoalsView: React.FC<GoalsViewProps> = ({
                   onClick={() => setIsDepositModalOpen(false)}
                   className={`px-4 py-2 text-xs font-medium rounded-xl hover:bg-black/5 dark:hover:bg-white/5 ${labelColor}`}
                 >
-                  Cancel
+                  {t('cancel', lang)}
                 </button>
                 <button
                   type="submit"
                   className="px-5 py-2 text-xs font-semibold rounded-xl bg-amber-500 hover:bg-amber-600 text-black transition-colors"
                 >
-                  Confirm Deposit
+                  {lang === 'id' ? 'Konfirmasi Setoran' : 'Confirm Deposit'}
                 </button>
               </div>
             </form>

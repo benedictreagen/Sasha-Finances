@@ -1,4 +1,4 @@
-import { Transaction, AccountInfo, SavingsGoal, EmergencyFundData, RecurringTransaction, ListsConfig } from './types';
+import { Transaction, AccountInfo, SavingsGoal, EmergencyFundData, RecurringTransaction, ListsConfig, Deposit } from './types';
 
 export const INITIAL_TYPES = ['Opening Balance', 'Income', 'Expense', 'Transfer', 'Adjustment'];
 
@@ -28,6 +28,46 @@ export const INITIAL_EVENTS = [
   'Other',
 ];
 
+export const INITIAL_DEPOSIT_PLATFORMS = [
+  'Seabank',
+  'Bank Jago',
+  'Blu by BCA',
+  'BCA',
+  'Bank Mandiri',
+  'Bibit',
+  'Pluang',
+  'Aladin',
+];
+
+export const INITIAL_DEPOSITS: Deposit[] = [
+  {
+    id: 'dep-1',
+    platform: 'Seabank',
+    name: 'Deposito Fleksi 3 Bulan',
+    principal: 2000000,
+    interestRate: 6.0,
+    startDate: '2026-07-01',
+    maturityDate: '2026-10-01',
+    estimatedInterest: 30247,
+    status: 'Active',
+    sourceAccount: 'Seabank',
+    notes: 'Bunga 6.0% p.a. - Pembayaran bunga saat jatuh tempo',
+  },
+  {
+    id: 'dep-2',
+    platform: 'Bank Jago',
+    name: 'Kantong Terkunci 1 Bulan',
+    principal: 1500000,
+    interestRate: 5.0,
+    startDate: '2026-08-16',
+    maturityDate: '2026-09-16',
+    estimatedInterest: 6370,
+    status: 'Active',
+    sourceAccount: 'Blu',
+    notes: 'Segera jatuh tempo dalam 30 hari',
+  },
+];
+
 export const INITIAL_ACCOUNTS: AccountInfo[] = [
   { name: 'Cash', type: 'Cash', openingBalance: 500000, balance: 500000 },
   { name: 'Blu', type: 'Bank', openingBalance: 3500000, balance: 3500000 },
@@ -46,6 +86,7 @@ export const DEFAULT_LISTS_CONFIG: ListsConfig = {
   paymentMethods: INITIAL_PAYMENT_METHODS,
   purposes: INITIAL_PURPOSES,
   events: INITIAL_EVENTS,
+  depositPlatforms: INITIAL_DEPOSIT_PLATFORMS,
 };
 
 export const INITIAL_BUDGETS: Record<string, number> = {
