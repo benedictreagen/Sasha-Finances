@@ -298,7 +298,6 @@ export const translations = {
     startDate: 'Tanggal Mulai',
     maturityDate: 'Tanggal Jatuh Tempo',
     status: 'Status',
-    notes: 'Catatan',
     statusActive: 'Aktif',
     statusMatured: 'Jatuh Tempo',
     statusWithdrawn: 'Dicairkan',
@@ -332,6 +331,9 @@ export const translations = {
     toastPlatformAdded: 'Platform baru berhasil ditambahkan.',
     toastPlatformDeleted: 'Platform berhasil dihapus.',
     toastPlatformRenamed: 'Platform berhasil diperbarui.',
+    depositCreatedToast: 'Data deposito baru berhasil dicatat.',
+    depositUpdatedToast: 'Data deposito berhasil diperbarui.',
+    depositDeletedToast: 'Data deposito berhasil dihapus.',
   },
 
   en: {
@@ -596,7 +598,6 @@ export const translations = {
     startDate: 'Start Date',
     maturityDate: 'Maturity Date',
     status: 'Status',
-    notes: 'Notes',
     statusActive: 'Active',
     statusMatured: 'Matured',
     statusWithdrawn: 'Withdrawn',
@@ -630,6 +631,9 @@ export const translations = {
     toastPlatformAdded: 'New platform added successfully.',
     toastPlatformDeleted: 'Platform removed.',
     toastPlatformRenamed: 'Platform updated successfully.',
+    depositCreatedToast: 'Deposit record saved successfully.',
+    depositUpdatedToast: 'Deposit record updated successfully.',
+    depositDeletedToast: 'Deposit record deleted.',
   },
 };
 

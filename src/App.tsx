@@ -295,7 +295,7 @@ export default function App() {
   };
 
   // Settings initial tab tracker
-  const [settingsInitialTab, setSettingsInitialTab] = useState<'appearance' | 'banner' | 'language' | 'categories' | 'accounts' | 'lists' | 'sync'>('sync');
+  const [settingsInitialTab, setSettingsInitialTab] = useState<'appearance' | 'banner' | 'language' | 'categories' | 'accounts' | 'platforms' | 'lists' | 'sync'>('sync');
 
   // Quick Add Modal State
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -826,13 +826,29 @@ export default function App() {
   };
 
   // Deposits CRUD Operations
-  const handleAddDeposit = (newDepData: Omit<Deposit, 'id'>) => {
+  const handleAddDeposit = (newDepData: Deposit, fundFromAccount?: string) => {
     const newDep: Deposit = {
       ...newDepData,
-      id: `dep-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      id: newDepData.id || `dep-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
     };
     const updated = [newDep, ...deposits];
     setDeposits(updated);
+
+    if (fundFromAccount) {
+      handleAddTransaction({
+        date: newDepData.startDate || new Date().toISOString().split('T')[0],
+        description: `Penempatan Deposito ${newDepData.platform} - ${newDepData.name}`,
+        type: 'Transfer',
+        amount: newDepData.principal,
+        account: fundFromAccount,
+        paymentMethod: 'Transfer',
+        category: 'Investasi',
+        purpose: 'Investment',
+        event: 'Deposito',
+        context: 'Personal',
+        notes: `Penempatan Deposito: ${newDepData.platform} - ${newDepData.name}`,
+      });
+    }
 
     if (googleToken && spreadsheetId && connectionState === 'connected') {
       writeDepositsToGoogleSheet(googleToken, spreadsheetId, updated)
@@ -845,6 +861,68 @@ export default function App() {
         });
     } else {
       showToast(t('depositCreatedToast', lang));
+    }
+  };
+
+  const handleWithdrawDeposit = (depositId: string, destinationAccount: string, actualInterest: number) => {
+    const target = deposits.find((d) => d.id === depositId);
+    if (!target) return;
+
+    const updated = deposits.map((d) =>
+      d.id === depositId
+        ? {
+            ...d,
+            status: 'Withdrawn' as const,
+            notes: d.notes ? `${d.notes} (Dicairkan ke ${destinationAccount})` : `Dicairkan ke ${destinationAccount}`,
+          }
+        : d
+    );
+    setDeposits(updated);
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    // 1. Record Principal Return as Transfer (keep savings rate accurate)
+    handleAddTransaction({
+      date: todayStr,
+      description: `Pencairan Pokok Deposito ${target.platform} - ${target.name}`,
+      type: 'Transfer',
+      amount: target.principal,
+      account: destinationAccount,
+      paymentMethod: 'Transfer',
+      category: 'Investasi',
+      purpose: 'Investment',
+      event: 'Deposito',
+      context: 'Personal',
+      notes: `Pencairan Pokok Deposito: ${target.platform} - ${target.name}`,
+    });
+
+    // 2. Record Actual Interest Received as Income
+    if (actualInterest > 0) {
+      handleAddTransaction({
+        date: todayStr,
+        description: `Bunga Deposito ${target.platform} - ${target.name}`,
+        type: 'Income',
+        amount: actualInterest,
+        account: destinationAccount,
+        paymentMethod: 'Transfer',
+        category: 'Investasi',
+        purpose: 'Investment',
+        event: 'Bunga Deposito',
+        context: 'Personal',
+        notes: `Bunga Deposito: ${target.platform} - ${target.name}`,
+      });
+    }
+
+    if (googleToken && spreadsheetId && connectionState === 'connected') {
+      writeDepositsToGoogleSheet(googleToken, spreadsheetId, updated)
+        .then(() => {
+          updateLastSyncedTime();
+          showToast(t('toastDepositWithdrawn', lang));
+        })
+        .catch((err) => {
+          console.warn('Sync deposits failed:', err);
+        });
+    } else {
+      showToast(t('toastDepositWithdrawn', lang));
     }
   };
 
@@ -1160,11 +1238,11 @@ export default function App() {
                 onAddDeposit={handleAddDeposit}
                 onEditDeposit={handleEditDeposit}
                 onDeleteDeposit={handleDeleteDeposit}
+                onWithdrawDeposit={handleWithdrawDeposit}
                 accounts={liveAccounts}
                 listsConfig={listsConfig}
                 theme={theme}
                 lang={lang}
-                onAddTransaction={handleAddTransaction}
                 onOpenPlatformSettings={() => {
                   setSettingsInitialTab('platforms');
                   handleSelectTab('Settings');
