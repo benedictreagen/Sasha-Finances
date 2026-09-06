@@ -167,6 +167,14 @@ export const translations = {
     startingBalance: 'Saldo Awal',
     currentBalance: 'Saldo Saat Ini',
     recentActivity: 'Aktivitas Terakhir',
+    editAccount: 'Ubah Rekening',
+    addAccount: 'Tambah Rekening',
+    accountClassification: 'Klasifikasi / Fungsi',
+    openingBalanceNotice: 'Saldo awal adalah konfigurasi akun, tidak menghasilkan mutasi transaksi baru.',
+    archiveAccount: 'Arsipkan Akun',
+    archived: 'Diarsipkan',
+    unarchiveAccount: 'Aktifkan Kembali',
+    deleteAccountWarning: 'Akun ini memiliki riwayat transaksi terkait. Disarankan untuk mengarsipkan agar laporan finansial tetap utuh.',
 
     // Goals View
     goalsTitle: 'Target Tabungan & Dana Darurat',
@@ -183,6 +191,16 @@ export const translations = {
     monthlyEssential: 'Biaya Pokok Bulanan',
     idealMonthsLabel: 'Jumlah Bulan Ideal',
     updateEmergencyFund: 'Perbarui Dana Darurat',
+    configureEmergencyFund: 'Konfigurasi Dana Darurat',
+    efAutoMode: 'Otomatis (Bulan × Biaya Pokok)',
+    efManualMode: 'Manual / Target Kustom',
+    efTargetMonths: 'Target Bulan Cakupan',
+    efMonthlyExpenses: 'Pengeluaran Wajib Bulanan',
+    efTargetAmount: 'Jumlah Target Dana Darurat',
+    efCurrentSaved: 'Dana Likuid Terkumpul',
+    efFundGap: 'Sisa Kebutuhan',
+    efCoverageProgress: 'Progres Cakupan',
+    efMonthsCovered: 'Bulan Tercukupi',
 
     // Settings View
     settingsTitle: 'Pengaturan & Kustomisasi',
@@ -467,6 +485,14 @@ export const translations = {
     startingBalance: 'Opening Balance',
     currentBalance: 'Current Balance',
     recentActivity: 'Recent Activity',
+    editAccount: 'Edit Account',
+    addAccount: 'Add Account',
+    accountClassification: 'Classification / Purpose',
+    openingBalanceNotice: 'Opening balance is an account configuration value and does not generate income/expense transactions.',
+    archiveAccount: 'Archive Account',
+    archived: 'Archived',
+    unarchiveAccount: 'Unarchive Account',
+    deleteAccountWarning: 'This account has associated transaction records. Archiving is recommended over deletion to preserve report integrity.',
 
     // Goals View
     goalsTitle: 'Savings Goals & Emergency Fund',
@@ -483,6 +509,16 @@ export const translations = {
     monthlyEssential: 'Monthly Essential Expense',
     idealMonthsLabel: 'Ideal Buffer Months',
     updateEmergencyFund: 'Update Emergency Fund',
+    configureEmergencyFund: 'Configure Emergency Fund',
+    efAutoMode: 'Automatic (Months × Essential Expenses)',
+    efManualMode: 'Manual / Custom Target',
+    efTargetMonths: 'Target Coverage Months',
+    efMonthlyExpenses: 'Monthly Essential Expenses',
+    efTargetAmount: 'Emergency Fund Target Amount',
+    efCurrentSaved: 'Current Liquid Fund Saved',
+    efFundGap: 'Fund Gap (Remaining)',
+    efCoverageProgress: 'Coverage Progress',
+    efMonthsCovered: 'Months Covered',
 
     // Settings View
     settingsTitle: 'Settings & Customization',

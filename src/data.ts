@@ -39,6 +39,40 @@ export const INITIAL_DEPOSIT_PLATFORMS = [
   'Aladin',
 ];
 
+export const INITIAL_SEMESTERS = [
+  'Semester 1',
+  'Semester 2',
+  'Semester 3',
+  'Semester 4',
+  'Semester 5',
+  'Semester 6',
+  'Semester 7',
+  'Semester 8',
+];
+
+export interface MonthOption {
+  code: string; // '01' - '12'
+  id: string;   // '01' - '12'
+  short: string;
+  nameId: string;
+  nameEn: string;
+}
+
+export const ALL_MONTHS: MonthOption[] = [
+  { id: '01', code: '01', short: 'Jan', nameId: 'Januari', nameEn: 'January' },
+  { id: '02', code: '02', short: 'Feb', nameId: 'Februari', nameEn: 'February' },
+  { id: '03', code: '03', short: 'Mar', nameId: 'Maret', nameEn: 'March' },
+  { id: '04', code: '04', short: 'Apr', nameId: 'April', nameEn: 'April' },
+  { id: '05', code: '05', short: 'May', nameId: 'Mei', nameEn: 'May' },
+  { id: '06', code: '06', short: 'Jun', nameId: 'Juni', nameEn: 'June' },
+  { id: '07', code: '07', short: 'Jul', nameId: 'Juli', nameEn: 'July' },
+  { id: '08', code: '08', short: 'Aug', nameId: 'Agustus', nameEn: 'August' },
+  { id: '09', code: '09', short: 'Sep', nameId: 'September', nameEn: 'September' },
+  { id: '10', code: '10', short: 'Oct', nameId: 'Oktober', nameEn: 'October' },
+  { id: '11', code: '11', short: 'Nov', nameId: 'November', nameEn: 'November' },
+  { id: '12', code: '12', short: 'Dec', nameId: 'Desember', nameEn: 'December' },
+];
+
 export const INITIAL_DEPOSITS: Deposit[] = [
   {
     id: 'dep-1',
@@ -87,6 +121,7 @@ export const DEFAULT_LISTS_CONFIG: ListsConfig = {
   purposes: INITIAL_PURPOSES,
   events: INITIAL_EVENTS,
   depositPlatforms: INITIAL_DEPOSIT_PLATFORMS,
+  semesters: INITIAL_SEMESTERS,
 };
 
 export const INITIAL_BUDGETS: Record<string, number> = {

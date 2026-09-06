@@ -55,6 +55,7 @@ export interface ListsConfig {
   purposes: string[];
   events: string[];
   depositPlatforms?: string[];
+  semesters?: string[];
 }
 
 export type DepositStatus = 'Active' | 'Matured' | 'Withdrawn' | 'Reinvested';
@@ -126,6 +127,10 @@ export interface AccountInfo {
   type: AccountType;
   openingBalance: number;
   balance: number;
+  classification?: string;
+  isArchived?: boolean;
+  txReferences?: number;
+  depReferences?: number;
 }
 
 export interface BudgetCategory {
@@ -149,6 +154,9 @@ export interface EmergencyFundData {
   currentAmount: number;
   idealMonths: number;
   monthlyEssentialExpense: number;
+  isManualTarget?: boolean;
+  targetMode?: 'auto' | 'manual';
+  manualTargetAmount?: number;
 }
 
 export interface FilterState {

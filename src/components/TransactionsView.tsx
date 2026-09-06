@@ -3,6 +3,7 @@ import { Transaction, ListsConfig, GoogleConnectionState, ThemeMode } from '../t
 import { formatIDR } from '../excelGenerator';
 import { getThemeTokens } from '../theme';
 import { Language, t, formatControlledValue } from '../i18n';
+import { ALL_MONTHS } from '../data';
 import { 
   Plus, 
   Trash2, 
@@ -304,9 +305,11 @@ export const TransactionsView: React.FC<TransactionsViewProps> = ({
               className={`w-full px-2.5 py-1.5 rounded-lg border font-medium ${inputBg}`}
             >
               <option value="All">{t('allMonths', lang)}</option>
-              <option value="08">{lang === 'id' ? 'Agustus' : 'August'} (08)</option>
-              <option value="09">{lang === 'id' ? 'September' : 'September'} (09)</option>
-              <option value="10">{lang === 'id' ? 'Oktober' : 'October'} (10)</option>
+              {ALL_MONTHS.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {lang === 'id' ? m.nameId : m.nameEn} ({m.id})
+                </option>
+              ))}
             </select>
           </div>
         </div>

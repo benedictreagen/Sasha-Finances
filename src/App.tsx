@@ -44,7 +44,10 @@ import {
   SPREADSHEET_ID_STORAGE_KEY, 
   LAST_SYNCED_STORAGE_KEY,
   fetchDepositsFromGoogleSheet,
-  writeDepositsToGoogleSheet
+  writeDepositsToGoogleSheet,
+  writeAccountsToGoogleSheet,
+  writeGoalsToGoogleSheet,
+  writeEmergencyFundToGoogleSheet
 } from './googleSheetsService';
 import { DashboardView } from './components/DashboardView';
 import { TransactionsView } from './components/TransactionsView';
@@ -156,13 +159,15 @@ export default function App() {
         const safeAccounts = Array.isArray(parsed?.accounts)
           ? parsed.accounts.map((a: any) => {
               if (typeof a === 'string') {
-                return { name: a, type: 'Bank' as const, openingBalance: 0, balance: 0 };
+                return { name: a, type: 'Bank' as const, openingBalance: 0, balance: 0, classification: 'Operasional / Likuid' as const, isArchived: false };
               }
               return {
                 name: a?.name || 'Account',
                 type: (a?.type || 'Bank') as any,
                 openingBalance: typeof a?.openingBalance === 'number' ? a.openingBalance : 0,
                 balance: typeof a?.balance === 'number' ? a.balance : 0,
+                classification: a?.classification || 'Operasional / Likuid',
+                isArchived: !!a?.isArchived,
               };
             })
           : DEFAULT_LISTS_CONFIG.accounts;
@@ -174,6 +179,7 @@ export default function App() {
           paymentMethods: Array.isArray(parsed?.paymentMethods) ? parsed.paymentMethods : DEFAULT_LISTS_CONFIG.paymentMethods,
           purposes: Array.isArray(parsed?.purposes) ? parsed.purposes : DEFAULT_LISTS_CONFIG.purposes,
           events: Array.isArray(parsed?.events) ? parsed.events : DEFAULT_LISTS_CONFIG.events,
+          semesters: Array.isArray(parsed?.semesters) ? parsed.semesters : DEFAULT_LISTS_CONFIG.semesters,
         };
       }
       return DEFAULT_LISTS_CONFIG;
@@ -315,10 +321,12 @@ export default function App() {
     } catch {}
   };
 
-  // Reconciled Live Accounts
+  // Reconciled Live Accounts with preserved configuration (Opening Balance, Classification, Archive status)
   const liveAccounts: AccountInfo[] = (listsConfig?.accounts || []).map((acc) => {
     const accName = typeof acc === 'string' ? acc : acc?.name || 'Account';
     const accType = typeof acc === 'string' ? 'Bank' : acc?.type || 'Bank';
+    const accClassification = typeof acc === 'string' ? 'Operasional / Likuid' : acc?.classification || 'Operasional / Likuid';
+    const accIsArchived = typeof acc === 'string' ? false : !!acc?.isArchived;
     let currentBalance = typeof acc?.openingBalance === 'number' ? acc.openingBalance : 0;
 
     (transactions || []).forEach((tx) => {
@@ -340,6 +348,8 @@ export default function App() {
       type: accType as any,
       openingBalance: typeof acc?.openingBalance === 'number' ? acc.openingBalance : 0,
       balance: currentBalance,
+      classification: accClassification,
+      isArchived: accIsArchived,
     };
   });
 
@@ -973,6 +983,144 @@ export default function App() {
     }
   };
 
+  // Accounts CRUD Operations (Edit, Add, Delete)
+  const handleUpdateAccount = (oldName: string, updatedAcc: AccountInfo) => {
+    const updatedAccountsList = (listsConfig.accounts || []).map((acc) => {
+      const name = typeof acc === 'string' ? acc : acc.name;
+      if (name.toLowerCase() === oldName.toLowerCase()) {
+        return updatedAcc;
+      }
+      return acc;
+    });
+
+    const newListsConfig = {
+      ...listsConfig,
+      accounts: updatedAccountsList,
+    };
+    setListsConfig(newListsConfig);
+    try {
+      localStorage.setItem('sashas_lists_config', JSON.stringify(newListsConfig));
+    } catch {}
+
+    // If account name changed, update references in transactions and deposits safely
+    if (oldName.toLowerCase() !== updatedAcc.name.toLowerCase()) {
+      const updatedTx = transactions.map((tx) => {
+        let changed = false;
+        let acc = tx.account;
+        let toAcc = tx.toAccount;
+        let ctx = tx.context;
+
+        if (acc.toLowerCase() === oldName.toLowerCase()) {
+          acc = updatedAcc.name;
+          changed = true;
+        }
+        if (toAcc && toAcc.toLowerCase() === oldName.toLowerCase()) {
+          toAcc = updatedAcc.name;
+          changed = true;
+        }
+        if (ctx && ctx.includes(`To: ${oldName}`)) {
+          ctx = ctx.replace(`To: ${oldName}`, `To: ${updatedAcc.name}`);
+          changed = true;
+        }
+
+        return changed ? { ...tx, account: acc, toAccount: toAcc, context: ctx } : tx;
+      });
+      setTransactions(updatedTx);
+      try {
+        localStorage.setItem('sashas_transactions', JSON.stringify(updatedTx));
+      } catch {}
+
+      const updatedDeps = deposits.map((d) => {
+        if (d.sourceAccount && d.sourceAccount.toLowerCase() === oldName.toLowerCase()) {
+          return { ...d, sourceAccount: updatedAcc.name };
+        }
+        return d;
+      });
+      setDeposits(updatedDeps);
+      try {
+        localStorage.setItem('sashas_deposits', JSON.stringify(updatedDeps));
+      } catch {}
+    }
+
+    if (googleToken && spreadsheetId && connectionState === 'connected') {
+      writeAccountsToGoogleSheet(googleToken, spreadsheetId, updatedAccountsList)
+        .then(() => updateLastSyncedTime())
+        .catch((err) => console.warn('Sync accounts to Sheets failed:', err));
+    }
+
+    showToast(lang === 'id' ? `Rekening "${updatedAcc.name}" berhasil diperbarui.` : `Account "${updatedAcc.name}" updated successfully.`);
+  };
+
+  const handleAddAccount = (newAcc: AccountInfo) => {
+    const updatedAccountsList = [...(listsConfig.accounts || []), newAcc];
+    const newListsConfig = {
+      ...listsConfig,
+      accounts: updatedAccountsList,
+    };
+    setListsConfig(newListsConfig);
+    try {
+      localStorage.setItem('sashas_lists_config', JSON.stringify(newListsConfig));
+    } catch {}
+
+    if (googleToken && spreadsheetId && connectionState === 'connected') {
+      writeAccountsToGoogleSheet(googleToken, spreadsheetId, updatedAccountsList)
+        .then(() => updateLastSyncedTime())
+        .catch((err) => console.warn('Sync new account to Sheets failed:', err));
+    }
+
+    showToast(lang === 'id' ? `Rekening "${newAcc.name}" berhasil ditambahkan.` : `Account "${newAcc.name}" added successfully.`);
+  };
+
+  const handleDeleteAccount = (accountName: string) => {
+    const updatedAccountsList = (listsConfig.accounts || []).filter((acc) => {
+      const name = typeof acc === 'string' ? acc : acc.name;
+      return name.toLowerCase() !== accountName.toLowerCase();
+    });
+    const newListsConfig = {
+      ...listsConfig,
+      accounts: updatedAccountsList,
+    };
+    setListsConfig(newListsConfig);
+    try {
+      localStorage.setItem('sashas_lists_config', JSON.stringify(newListsConfig));
+    } catch {}
+
+    if (googleToken && spreadsheetId && connectionState === 'connected') {
+      writeAccountsToGoogleSheet(googleToken, spreadsheetId, updatedAccountsList)
+        .then(() => updateLastSyncedTime())
+        .catch((err) => console.warn('Sync deleted account to Sheets failed:', err));
+    }
+
+    showToast(lang === 'id' ? `Rekening "${accountName}" telah dihapus.` : `Account "${accountName}" deleted.`);
+  };
+
+  // Savings Goals & Emergency Fund handlers
+  const handleUpdateGoals = (newGoals: SavingsGoal[]) => {
+    setGoals(newGoals);
+    try {
+      localStorage.setItem('sashas_goals', JSON.stringify(newGoals));
+    } catch {}
+
+    if (googleToken && spreadsheetId && connectionState === 'connected') {
+      writeGoalsToGoogleSheet(googleToken, spreadsheetId, newGoals)
+        .then(() => updateLastSyncedTime())
+        .catch((err) => console.warn('Sync goals to Sheets failed:', err));
+    }
+  };
+
+  const handleUpdateEmergencyFund = (newEf: EmergencyFundData) => {
+    setEmergencyFund(newEf);
+    try {
+      localStorage.setItem('sashas_emergency', JSON.stringify(newEf));
+    } catch {}
+
+    if (googleToken && spreadsheetId && connectionState === 'connected') {
+      writeEmergencyFundToGoogleSheet(googleToken, spreadsheetId, newEf)
+        .then(() => updateLastSyncedTime())
+        .catch((err) => console.warn('Sync emergency fund to Sheets failed:', err));
+    }
+  };
+
   // Theme token classes
   const tokens = getThemeTokens(theme);
   const isDark = tokens.isDark;
@@ -1225,8 +1373,12 @@ export default function App() {
               <AccountsView
                 accounts={liveAccounts}
                 transactions={transactions}
+                deposits={deposits}
                 listsConfig={listsConfig}
                 onAddTransaction={handleAddTransaction}
+                onUpdateAccount={handleUpdateAccount}
+                onAddAccount={handleAddAccount}
+                onDeleteAccount={handleDeleteAccount}
                 theme={theme}
                 lang={lang}
               />
@@ -1253,9 +1405,9 @@ export default function App() {
             {activeTab === 'Goals' && (
               <GoalsView
                 goals={goals}
-                onUpdateGoals={setGoals}
+                onUpdateGoals={handleUpdateGoals}
                 emergencyFund={emergencyFund}
-                onUpdateEmergencyFund={setEmergencyFund}
+                onUpdateEmergencyFund={handleUpdateEmergencyFund}
                 theme={theme}
                 lang={lang}
               />

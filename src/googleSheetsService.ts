@@ -792,3 +792,132 @@ export async function writeAllDataToGoogleSheet(
     await handleApiError(batchRes, 'Failed to update Google Spreadsheet data');
   }
 }
+
+/**
+ * Writes the accounts list into Accounts!A2:G and updates Lists tab
+ */
+export async function writeAccountsToGoogleSheet(
+  accessToken: string,
+  spreadsheetId: string,
+  accounts: (string | AccountInfo)[]
+): Promise<void> {
+  const normalizedAccounts: AccountInfo[] = accounts.map((acc) => {
+    if (typeof acc === 'string') {
+      return { name: acc, type: 'Bank', openingBalance: 0, balance: 0 };
+    }
+    return {
+      name: acc.name,
+      type: acc.type || 'Bank',
+      openingBalance: typeof acc.openingBalance === 'number' ? acc.openingBalance : 0,
+      balance: acc.balance || 0,
+      classification: acc.classification,
+      isArchived: acc.isArchived,
+    };
+  });
+
+  await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Accounts!A2:G100:clear`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+
+  const acctValues = [
+    ['Account', 'Type', 'Opening Balance', 'Income / Inflow', 'Expense / Outflow', 'Net Transfers', 'Current Balance'],
+    ...normalizedAccounts.map((acc, idx) => {
+      const r = idx + 3;
+      return [
+        acc.name,
+        acc.type,
+        acc.openingBalance,
+        `=SUMIFS(Transactions!$H$3:$H$1000, Transactions!$E$3:$E$1000, A${r})`,
+        `=SUMIFS(Transactions!$I$3:$I$1000, Transactions!$E$3:$E$1000, A${r})`,
+        `=SUMIFS(Transactions!$G$3:$G$1000, Transactions!$J$3:$J$1000, "*"&A${r}&"*", Transactions!$C$3:$C$1000, "Transfer") - SUMIFS(Transactions!$G$3:$G$1000, Transactions!$E$3:$E$1000, A${r}, Transactions!$C$3:$C$1000, "Transfer")`,
+        `=C${r}+D${r}-E${r}+F${r}`,
+      ];
+    }),
+    ['TOTAL BALANCE', '', `=SUM(C3:C${2 + normalizedAccounts.length})`, `=SUM(D3:D${2 + normalizedAccounts.length})`, `=SUM(E3:E${2 + normalizedAccounts.length})`, `=SUM(F3:F${2 + normalizedAccounts.length})`, `=SUM(G3:G${2 + normalizedAccounts.length})`],
+  ];
+
+  await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Accounts!A2:G${acctValues.length + 1}?valueInputOption=USER_ENTERED`,
+    {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ values: acctValues }),
+    }
+  );
+}
+
+/**
+ * Writes the goals list into Savings Goals!A1:F
+ */
+export async function writeGoalsToGoogleSheet(
+  accessToken: string,
+  spreadsheetId: string,
+  goals: SavingsGoal[]
+): Promise<void> {
+  await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/'Savings Goals'!A1:F100:clear`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+
+  const goalsValues = [
+    ['Goal ID', 'Goal Name', 'Target Balance', 'Current Saved', 'Target Date', 'Progress'],
+    ...goals.map((g, idx) => {
+      const r = idx + 2;
+      return [
+        g.id,
+        g.name,
+        g.targetBalance,
+        g.saved,
+        g.targetDate,
+        `=IF(C${r}>0, D${r}/C${r}, 0)`,
+      ];
+    }),
+  ];
+
+  await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/'Savings Goals'!A1:F${goalsValues.length}?valueInputOption=USER_ENTERED`,
+    {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ values: goalsValues }),
+    }
+  );
+}
+
+/**
+ * Writes the Emergency Fund data into Emergency Fund!A1:D7
+ */
+export async function writeEmergencyFundToGoogleSheet(
+  accessToken: string,
+  spreadsheetId: string,
+  emergencyFund: EmergencyFundData
+): Promise<void> {
+  const efValues = [
+    ['Parameter', 'Value', 'Unit / Note', 'Formula / Reference'],
+    ['Monthly Essential Expense', emergencyFund.monthlyEssentialExpense, 'Rupiah', 'Average Necessary Expenses'],
+    ['Target Months Coverage', emergencyFund.idealMonths, 'Months', 'Benchmark: 6 Months'],
+    ['Target Amount', emergencyFund.targetMode === 'manual' && emergencyFund.manualTargetAmount ? emergencyFund.manualTargetAmount : '=B2*B3', 'Rupiah', 'Manual / Target Formula'],
+    ['Current Amount', emergencyFund.currentAmount, 'Rupiah', 'Linked to Savings'],
+    ['Fund Gap (Remaining)', '=B4-B5', 'Rupiah', '= Target - Current Saved'],
+    ['Coverage Progress %', '=IF(B4>0, B5/B4, 0)', 'Percentage', '= Current / Target'],
+  ];
+
+  await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/'Emergency Fund'!A1:D7?valueInputOption=USER_ENTERED`,
+    {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ values: efValues }),
+    }
+  );
+}

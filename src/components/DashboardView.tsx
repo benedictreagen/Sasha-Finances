@@ -13,6 +13,7 @@ import { Language, t, formatControlledValue } from '../i18n';
 import { BannerCover } from './BannerCover';
 import { formatIDR, formatPercent } from '../excelGenerator';
 import { getThemeTokens } from '../theme';
+import { ALL_MONTHS, INITIAL_SEMESTERS } from '../data';
 import { 
   Wallet, 
   TrendingUp, 
@@ -155,17 +156,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     .sort((a, b) => b.amount - a.amount)
     .slice(0, 5);
 
-  // Cash Flow Last 6 Months (Simulated / aggregated historical trend)
-  const last6Months = [
-    { name: 'Apr', income: 6800000, expense: 4200000, net: 2600000 },
-    { name: 'May', income: 7200000, expense: 4900000, net: 2300000 },
-    { name: 'Jun', income: 8100000, expense: 5100000, net: 3000000 },
-    { name: 'Jul', income: 7000000, expense: 4600000, net: 2400000 },
-    { name: 'Aug', income: 7500000, expense: 4800000, net: 2700000 },
-    { name: 'Sep', income: totalIncome, expense: totalExpense, net: netSavings },
-  ];
+  // 12 Months Cash Flow Breakdown derived strictly from real transactions (Missing months show 0 / no fake data)
+  const monthlyCashFlow = ALL_MONTHS.map((m) => {
+    const monthTx = transactions.filter((t) => t.date.split('-')[1] === m.id);
+    const inc = monthTx.filter((t) => t.type === 'Income').reduce((s, t) => s + t.amount, 0);
+    const exp = monthTx.filter((t) => t.type === 'Expense').reduce((s, t) => s + t.amount, 0);
+    return {
+      id: m.id,
+      name: lang === 'id' ? m.nameId.slice(0, 3) : m.nameEn.slice(0, 3),
+      fullName: lang === 'id' ? m.nameId : m.nameEn,
+      income: inc,
+      expense: exp,
+      net: inc - exp,
+    };
+  });
 
-  const maxCashFlow = Math.max(...last6Months.map((m) => Math.max(m.income, m.expense)), 10000000);
+  const maxCashFlow = Math.max(
+    ...monthlyCashFlow.map((m) => Math.max(m.income, m.expense)),
+    10000000
+  );
 
   return (
     <div className="space-y-6">
@@ -215,8 +224,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               onChange={(e) => setFilter({ ...filter, semester: e.target.value })}
               className={`w-full px-2.5 py-1.5 rounded-lg border font-medium ${inputBg}`}
             >
-              <option value="Semester 1 (2026)">Sem 1 (2026)</option>
-              <option value="Semester 2 (2026)">Sem 2 (2026)</option>
+              {INITIAL_SEMESTERS.map((sem) => (
+                <option key={sem} value={sem}>{sem}</option>
+              ))}
             </select>
           </div>
 
@@ -241,9 +251,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               className={`w-full px-2.5 py-1.5 rounded-lg border font-medium ${inputBg}`}
             >
               <option value="All">{t('allMonths', lang)}</option>
-              <option value="08">{lang === 'id' ? 'Agustus' : 'August'}</option>
-              <option value="09">{lang === 'id' ? 'September' : 'September'}</option>
-              <option value="10">{lang === 'id' ? 'Oktober' : 'October'}</option>
+              {ALL_MONTHS.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {lang === 'id' ? m.nameId : m.nameEn} ({m.id})
+                </option>
+              ))}
             </select>
           </div>
 
@@ -575,26 +587,36 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-6 gap-3 items-end h-44 pt-4 border-b border-inherit">
-          {last6Months.map((m) => {
-            const incH = Math.max(10, (m.income / maxCashFlow) * 100);
-            const expH = Math.max(10, (m.expense / maxCashFlow) * 100);
+        <div className="grid grid-cols-6 sm:grid-cols-12 gap-2 items-end h-44 pt-4 border-b border-inherit">
+          {monthlyCashFlow.map((m) => {
+            const hasData = m.income > 0 || m.expense > 0;
+            const incH = hasData ? Math.max(8, (m.income / maxCashFlow) * 100) : 0;
+            const expH = hasData ? Math.max(8, (m.expense / maxCashFlow) * 100) : 0;
 
             return (
-              <div key={m.name} className="flex flex-col items-center h-full justify-end group">
-                <div className="w-full flex justify-center space-x-1 sm:space-x-2 items-end h-full">
-                  <div
-                    className="w-3 sm:w-5 bg-emerald-500/80 rounded-t-sm transition-all group-hover:bg-emerald-500"
-                    style={{ height: `${incH}%` }}
-                    title={`${m.name} ${t('income', lang)}: ${formatIDR(m.income)}`}
-                  />
-                  <div
-                    className="w-3 sm:w-5 bg-rose-500/80 rounded-t-sm transition-all group-hover:bg-rose-500"
-                    style={{ height: `${expH}%` }}
-                    title={`${m.name} ${t('expense', lang)}: ${formatIDR(m.expense)}`}
-                  />
+              <div key={m.id} className="flex flex-col items-center h-full justify-end group">
+                <div className="w-full flex justify-center space-x-0.5 sm:space-x-1 items-end h-full">
+                  {hasData ? (
+                    <>
+                      <div
+                        className="w-2 sm:w-3.5 bg-emerald-500/80 rounded-t-sm transition-all group-hover:bg-emerald-500"
+                        style={{ height: `${incH}%` }}
+                        title={`${m.fullName} ${t('income', lang)}: ${formatIDR(m.income)}`}
+                      />
+                      <div
+                        className="w-2 sm:w-3.5 bg-rose-500/80 rounded-t-sm transition-all group-hover:bg-rose-500"
+                        style={{ height: `${expH}%` }}
+                        title={`${m.fullName} ${t('expense', lang)}: ${formatIDR(m.expense)}`}
+                      />
+                    </>
+                  ) : (
+                    <div 
+                      className="w-2 sm:w-3.5 h-1 rounded-full bg-black/10 dark:bg-white/10" 
+                      title={`${m.fullName}: Rp 0 (no data)`}
+                    />
+                  )}
                 </div>
-                <span className={`text-[11px] mt-2 font-medium ${labelColor}`}>{m.name}</span>
+                <span className={`text-[10px] mt-2 font-medium truncate ${labelColor}`}>{m.name}</span>
               </div>
             );
           })}

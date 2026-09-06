@@ -757,24 +757,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </button>
             </div>
           </div>
-
-          {/* Reset Demo Data */}
-          <div className={`p-5 rounded-2xl border ${cardBg}`}>
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-xs font-semibold text-rose-500">Reset Local Demo Data</span>
-                <p className={`text-[11px] ${labelColor} mt-0.5`}>Reverts local data back to initial template numbers</p>
-              </div>
-              <button
-                type="button"
-                onClick={onResetData}
-                className="px-3.5 py-1.5 rounded-xl border border-rose-500/30 text-rose-500 hover:bg-rose-500/10 text-xs font-medium cursor-pointer"
-              >
-                <RotateCcw className="w-3.5 h-3.5 inline mr-1" />
-                Reset Data
-              </button>
-            </div>
-          </div>
         </div>
       )}
 
@@ -994,6 +976,22 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   {listsConfig.paymentMethods.map((pm) => (
                     <span key={pm} className="px-2 py-1 rounded-md text-xs border border-inherit font-medium">
                       {pm}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className={`p-4 rounded-xl border ${cardAlt}`}>
+                <h4 className="text-xs font-semibold uppercase tracking-wider mb-2">Semesters (1–8)</h4>
+                <div className="flex flex-wrap gap-1.5">
+                  {(listsConfig.semesters || [
+                    'Semester 1 (2025)', 'Semester 2 (2025)',
+                    'Semester 3 (2026)', 'Semester 4 (2026)',
+                    'Semester 5 (2027)', 'Semester 6 (2027)',
+                    'Semester 7 (2028)', 'Semester 8 (2029)'
+                  ]).map((sem) => (
+                    <span key={sem} className="px-2 py-1 rounded-md text-xs border border-inherit font-medium">
+                      {sem}
                     </span>
                   ))}
                 </div>
